@@ -1,0 +1,7 @@
+# use something like (on a mac with homebrew);
+
+$ make
+$ export PKG_CONFIG_PATH=/usr/X11/lib/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/Cellar/libxml2/2.9.2/lib/pkgconfig
+$ (cd deps/gtknode && aclocal && autoconf && automake && ./configure && make)
+$ make compile-all
+$ erl -sname foo -pa ebin/ -pa deps/*/ebin

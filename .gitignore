@@ -1,0 +1,11 @@
+\#*
+.\#*
+*~
+/.eunit/
+/.rebar/
+/deps/
+/bin/*[^sh]
+/ebin/
+*.o
+*.beam
+*.plt
