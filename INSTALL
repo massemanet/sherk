@@ -3,5 +3,7 @@
 $ make
 $ export PKG_CONFIG_PATH=/usr/X11/lib/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/Cellar/libxml2/2.9.2/lib/pkgconfig
 $ (cd deps/gtknode && aclocal && autoconf && automake && ./configure && make)
-$ make compile-all
+$ (cd deps/eper && make)
 $ erl -sname foo -pa ebin/ -pa deps/*/ebin
+
+1> sherk:go().
