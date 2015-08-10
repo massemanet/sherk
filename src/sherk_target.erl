@@ -39,7 +39,7 @@ start(LD) ->
 start_trace(LD) ->
   Cons = consumer(dict:fetch(dest,LD)),
   send2port(Cons,{trace_info,dict:to_list(LD)}),
-  Flags = [{tracer,Cons}|dict:fetch(flags,LD)],
+  Flags = [{tracer,Cons},timestamp()|dict:fetch(flags,LD)],
   lists:foreach(fun(P) -> erlang:trace(P,true,Flags)end, dict:fetch(procs,LD)),
   dict:store(consumer,Cons,LD).
 
@@ -60,6 +60,23 @@ set_tps(TPs) -> lists:foreach(fun set_tps_f/1,TPs).
 
 set_tps_f({MFA,MS,Fs}) -> erlang:trace_pattern(MFA,MS,Fs).
 
+timestamp() ->
+  case is_flag_broken(cpu_timestamp) of
+    true  -> timestamp;
+    false -> cpu_timestamp
+  end.
+
+is_flag_broken(Flag) ->
+  try
+    erlang:trace(all,true,[Flag]),
+    erlang:trace(all,false,[Flag]),
+    false
+  catch
+    _:_ ->
+      erlang:display({node(),cpu_timestamp_is_broken}),
+      true
+  end.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 stop_trace(LD) ->
   erlang:trace(all,false,dict:fetch(flags,LD)),
@@ -76,14 +93,23 @@ unset_tps() ->
 check_dest(LD) ->
   dict:store(dest,mk_dest(dict:fetch(dest,LD)),LD).
 
-mk_dest({ip,IP}) -> {ip,IP};
-mk_dest({file,{_,0,Tmp}}) -> {file,{0,mk_file(Tmp)}};
-mk_dest({file,{_,_Sz,_Tmp}}) -> exit({many_files,not_yet_implemented}).
+mk_dest({ip,IP})    -> {ip,IP};
+mk_dest({file,Dir}) -> {file,{0,mk_file(Dir)}};
+mk_dest(Dest)       -> error({bad_dest,Dest}).
 
 mk_file(Dir) ->
-  File = filename:join(Dir,"sherk")++".trc",
-  filelib:ensure_dir(File),
-  File.
+  File = filename:join([Dir,"sherk","sherk"++timestring()++".trc"]),
+  try
+    ok = filelib:ensure_dir(File),
+    File
+  catch
+    _:Error -> error({file_create_fail,{Error,File}})
+  end.
+
+timestring() ->
+  {{Y,M,D},{Ho,Mi,Se}} = calendar:local_time(),
+  Format = "~4w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+  lists:flatten(io_lib:format(Format,[Y,M,D,Ho,Mi,Se])).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 check_procs(LD) ->

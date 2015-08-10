@@ -19,6 +19,7 @@
 -export([loop/1]).
 
 -include("log.hrl").
+-include_lib("kernel/include/file.hrl").
 
 -define(LOOP(X), ?MODULE:loop(X)).
 
@@ -219,18 +220,14 @@ aq_go(LD) ->
   g('Gtk_widget_set_sensitive',[aq_go_button,false]),
   g('Gtk_widget_set_sensitive',[aq_stop_button,true]),
   Time = aq_get_time(),
-  Procs = all,
   Targs = aq_get_nodes(),
-  Flags = aq_get_flags(Targs),
-  RTPs = aq_get_rtps(Flags),
+  Flavor = aq_get_flavor(),
   Dest = {file,aq_get_dest(),0,"/tmp"},
   ?log([{time,Time},
-        {flags,Flags},
-        {rTPs,RTPs},
-        {procs,Procs},
+        {flavor,Flavor},
         {targs,Targs},
         {dest,Dest}]),
-  P = sherk_aquire:go(Time,Flags,RTPs,Procs,Targs,Dest),
+  P = sherk_aquire:go(Time,Flavor,Targs,Dest),
   dict:store(aq_mon,erlang:monitor(process,P),LD).
 
 aq_stop(LD) ->
@@ -255,8 +252,8 @@ do_aq_stop(LD,Reason) ->
 
 aq_check() ->
   try
-    Dir = g('Gtk_file_chooser_get_filename',[aq_filechoose]),
-    sherk_aquire:check_dir(Dir),
+    D = g('Gtk_file_chooser_get_filename',[aq_filechoose]),
+    {ok,#file_info{type=directory, access=read_write}} = file:read_file_info(D),
     [_|_] = get_selected_data(aq_treeview,0),
     _ = list_to_integer(g('Gtk_entry_get_text',[aq_time_entry])),
     g('Gtk_widget_set_sensitive',[aq_go_button,true])
@@ -267,16 +264,10 @@ aq_check() ->
 aq_get_time() ->
   1000*list_to_integer(g('Gtk_entry_get_text',[aq_time_entry])).
 
-aq_get_flags(Nodes) ->
+aq_get_flavor() ->
   case g('Gtk_toggle_button_get_active',[aq_radiobutton_proc]) of
-    true -> proc_flags(Nodes);
-    false -> call_flags(Nodes)
-  end.
-
-aq_get_rtps(Flags) ->
-  case lists:member(call,Flags) of
-    true -> [{'_','_'}];
-    false -> []
+    true  -> proc;
+    false -> call
   end.
 
 aq_get_nodes() ->
@@ -353,25 +344,6 @@ wierd(UpDown,Node,Ts,BTs) ->
 update_targs(Ts,LD) ->
   update_treeview_list(aq_treeview,[[to_str(T)]||T<-Ts]),
   dict:store(targs,Ts,LD).
-
-proc_flags(Nodes) ->
-  ['procs','running','garbage_collection',
-   timestamp(Nodes),'set_on_spawn'].
-
-call_flags(Nodes) ->
-  ['call','return_to','arity'|proc_flags(Nodes)].
-
-timestamp(Nodes) ->
-  case [N || N <- Nodes, flag_broken(N,cpu_timestamp)] of
-    [] -> 'cpu_timestamp';
-    _ -> 'timestamp'
-  end.
-
-flag_broken(Node,Flag) ->
-  case is_tuple(rpc:call(Node,erlang,trace,[all,true,[Flag]])) of
-    true -> true;
-    false-> rpc:call(Node,erlang,trace,[all,false,[Flag]]),false
-  end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 procs(LD) ->
@@ -519,7 +491,6 @@ update_iter([I|D], Store) ->
 pth(P) -> lists:flatten(pth(P,[])).
 pth([I],O) -> [to_str(I)|O];
 pth([H|T],O) -> pth(T,[$:,to_str(H)|O]).
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 set_selection_mode(View,Mode) ->
