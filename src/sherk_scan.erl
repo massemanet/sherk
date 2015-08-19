@@ -218,11 +218,11 @@ mass({port_info, Info}) -> handle_porti(Info), [];
 mass({proc_info, Info}) -> handle_proci(Info), [];
 mass({trace_info, Info}) -> handle_traci(Info), [];
 
-mass({trace, A, B, C}) -> mass(A, B, C, no_time);
+mass({trace, A, B, C})    -> mass(A, B, C, no_time);
 mass({trace, A, B, C, D}) -> mass(A, B, {C, D}, no_time);
-mass({trace_ts, A, B, C, TS}) -> mass(A ,B, C, TS);
-mass({trace_ts, A, B, C, D, TS}) -> mass(A, B, {C, D}, TS);
-mass(X) -> ?log({unrec_msg, X}), [].
+mass({_, A, B, C, TS})    -> mass(A ,B, C, TS);
+mass({_, A, B, C, D, TS}) -> mass(A, B, {C, D}, TS);
+mass(X)                   -> ?log({unrec_msg, X}), [].
 
 mass(Pid, T=send, X, TS) ->                         mass_send(Pid,T,X,TS);
 mass(Pid, T=send_to_non_existing_process, X,TS) ->  mass_send(Pid,T,X,TS);

@@ -22,10 +22,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 go() ->
-  go(5).
+  go(5000).
 
 go(Time) ->
-  go(Time,{file,"/tmp/sherk/call_trace",0,"/tmp"}).
+  go(Time,{file,"/tmp"}).
 
 go(Time,Dest) ->
   go(Time,call,Dest).
@@ -67,7 +67,7 @@ flags(proc) -> [procs,running,garbage_collection,set_on_spawn];
 flags(call) -> [call,return_to,arity|flags(proc)];
 flags(Flavor) -> error({bad_flavor,Flavor}).
 
-rtps(call) -> [{'_','_'}];
+rtps(call) -> [{{'_','_','_'},[],[local]}];
 rtps(proc) -> [];
 rtps(Flav) -> error({bad_flavor,Flav}).
 
@@ -134,7 +134,7 @@ stop(LD) ->
   recv(Pids,dict:fetch(dest,LD),dict:new()).
 
 recv(_,{ip,_},_) -> ok;
-recv(Pids,{file,{Dir,_,_}},FDs) -> recv(Pids,Dir,FDs);
+recv(Pids,{file,Dir},FDs) -> recv(Pids,Dir,FDs);
 recv([],_,FDs) ->
   case dict:fold(fun(P,_,A)->[node(P)|A] end,[],FDs) of
     [] -> ok;
@@ -149,11 +149,11 @@ recv(Pids,Dir,FDs) ->
   end.
 
 stuff(P,B,Dir,FDs) ->
-  try
-    file:write(dict:fetch(P,FDs),B),
-    FDs
-  catch
-    _:_ ->
+  case dict:fetch(P,FDs) of
+    {ok,FD} ->
+      file:write(FD,B),
+      FDs;
+    error ->
       File = filename:join(Dir,atom_to_list(node(P)))++".trz",
       filelib:ensure_dir(File),
       {ok,FD} = file:open(File,[raw,write,compressed]),
