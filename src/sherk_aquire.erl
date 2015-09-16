@@ -149,7 +149,7 @@ recv(Pids,Dir,FDs) ->
   end.
 
 stuff(P,B,Dir,FDs) ->
-  case dict:fetch(P,FDs) of
+  case dict:find(P,FDs) of
     {ok,FD} ->
       file:write(FD,B),
       FDs;
