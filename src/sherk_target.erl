@@ -37,10 +37,12 @@ start(LD) ->
   start_trace(LD).
 
 start_trace(LD) ->
-  Cons = consumer(dict:fetch(dest,LD)),
+  Procs  = dict:fetch(procs,LD),
+  TimeSt = timestamp(Procs),
+  Cons   = consumer(dict:fetch(dest,LD)),
   send2port(Cons,{trace_info,dict:to_list(LD)}),
-  Flags = [{tracer,Cons},timestamp()|dict:fetch(flags,LD)],
-  lists:foreach(fun(P) -> erlang:trace(P,true,Flags)end, dict:fetch(procs,LD)),
+  Flags = [{tracer,Cons},TimeSt|dict:fetch(flags,LD)],
+  lists:foreach(fun(P) -> erlang:trace(P,true,Flags) end,Procs),
   dict:store(consumer,Cons,LD).
 
 consumer(Dest) ->
@@ -60,21 +62,19 @@ set_tps(TPs) -> lists:foreach(fun set_tps_f/1,TPs).
 
 set_tps_f({MFA,MS,Fs}) -> erlang:trace_pattern(MFA,MS,Fs).
 
-timestamp() ->
-  case is_flag_broken(cpu_timestamp) of
-    true  -> timestamp;
-    false -> cpu_timestamp
+timestamp(Procs) ->
+  case cpu_timestamp_works() andalso Procs =:= [all] of
+    true  -> cpu_timestamp;
+    false -> timestamp
   end.
 
-is_flag_broken(Flag) ->
+cpu_timestamp_works() ->
   try
-    erlang:trace(all,true,[Flag]),
-    erlang:trace(all,false,[Flag]),
-    false
+    erlang:trace(all,true,[cpu_timestamp]),
+    erlang:trace(all,false,[cpu_timestamp]),
+    true
   catch
-    _:_ ->
-      erlang:display({node(),cpu_timestamp_is_broken}),
-      true
+    _:_ -> false
   end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
