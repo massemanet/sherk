@@ -120,6 +120,10 @@ loop(LD) ->
       stop(LD);
     stop ->
       stop(LD);
+    {info,P,D} ->
+      I = [{K,V}||{K,V}<-dict:to_list(D),lists:member(K,[procs,flags,time])],
+      ?log([{target,node(P)},{info,I}]),
+      loop(LD);
     {'EXIT',P,R} ->
       ?log([got_exit,{from,node(P)},{reason,R}]),
       case dict:fetch(pids,LD) of

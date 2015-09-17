@@ -43,6 +43,7 @@ start_trace(LD) ->
   send2port(Cons,{trace_info,dict:to_list(LD)}),
   Flags = [{tracer,Cons},TimeSt|dict:fetch(flags,LD)],
   lists:foreach(fun(P) -> erlang:trace(P,true,Flags) end,Procs),
+  dict:fetch(daddy,LD) ! {info,self(),LD},
   dict:store(consumer,Cons,LD).
 
 consumer(Dest) ->
