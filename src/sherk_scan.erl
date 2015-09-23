@@ -11,10 +11,9 @@
 -include_lib("kernel/include/file.hrl").
 
 -export([go/5]).
+-export([fold/3,fold/4]).
 
 -include("log.hrl").
-
--record(state,{seq = 0,hits = 0,cbs,pattern,out,min,max,eof = false}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  go(FileName,Patt,CBs,Min,Max)
@@ -37,6 +36,17 @@
 %%%  Min - integer() - min sequence number
 %%%  Max - integer() - max sequence number
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-record(state,{fd,
+               seq = 0,
+               hits = 0,
+               eof = false,
+               cb,
+               acc,
+               pattern,
+               min,
+               max}).
+
 go(FileName,Patt,CBs,'',Max) ->
   go(FileName,Patt,CBs,0,Max);
 go(FileName,_Patt,raw,Min,Max) ->
@@ -47,21 +57,43 @@ go(FileName,_Patt,raw,Min,Max) ->
 go(FileName,Patt,CBs,Min,Max) ->
   sherk_ets:new(?MODULE),
   {ok,FD} = file:open(FileName,[read,raw,binary,compressed]),
-  State = #state{pattern=Patt,cbs=cbs(CBs),min=Min,max=Max},
+  State = #state{pattern=Patt,cb=cbs(CBs),min=Min,max=Max},
   St = file_action(FD,State,fun do/2),
   file:close(FD),
   {hits,St#state.hits}.
 
--define(CHUNKSIZE,100000).
-file_action(FD,Stat,Fun) ->
-  file_action(make_chunk(FD,<<>>),FD,Stat,Fun).
+fold(Filename,CB,Acc) ->
+  fold(Filename,CB,Acc,[]).
+fold(Filename,CB,Acc,Opts) ->
+  sherk_ets:new(?MODULE),
+  {ok,FD} = file:open(Filename,[read,raw,binary,compressed]),
+  try
+    file_action(mk_state(CB,Acc,FD,Opts))
+  after
+    file:close(FD)
+  end.
 
-file_action(_,_FD,#state{eof = true} = Stat,Fun) ->
-  Fun(end_of_trace,Stat);
-file_action(eof,_FD,Stat,Fun) ->
-  Fun(end_of_trace,Stat);
-file_action({Term,Rest},FD,Stat,Fun) ->
-  file_action(make_chunk(FD,Rest),FD,Fun(Term,Stat),Fun).
+mk_state(CB,Acc,FD,Opts) ->
+  #state{fd = FD,
+         cb = CB,
+         acc = Acc,
+         pattern = getv(pattern,Opts,''),
+         min = getv(min,Opts,0),
+         max = getv(max,Opts,'')}.
+
+getv(K,PL,Def) ->
+  proplists:get_value(K,PL,Def).
+
+-define(CHUNKSIZE,100000).
+file_action(S) ->
+  file_action(make_chunk(S#state.fd,<<>>),S).
+
+file_action(_,S = #state{eof = true,cb = CB,acc = Acc}) ->
+  S#state{acc = CB(eof,Acc)};
+file_action(eof,S = #state{cb = CB,acc = Acc}) ->
+  S#state{acc = CB(eof,Acc)};
+file_action({Term,Rest},S = #state{cb = CB,acc = Acc}) ->
+  file_action(make_chunk(S#state.fd,Rest),S#state{acc = CB(Term,Acc)}).
 
 make_chunk(_FD,eof) ->
   eof;
@@ -143,27 +175,30 @@ grep(P,T) -> grep([P],T).
 
 grp([],_) -> [];
 grp(P,[]) -> P;
-grp(P,Fun)
-  when is_function(Fun) -> grp(P,list_to_atom(erlang:fun_to_list(Fun)));
-grp(P,Port)
-  when is_port(Port) -> grp(P,list_to_atom(erlang:port_to_list(Port)));
-grp(P,Rf)
-  when is_reference(Rf) -> grp(P,list_to_atom(erlang:ref_to_list(Rf)));
-grp(P,Pid)
-  when is_pid(Pid) -> grp(P,list_to_atom(pid_to_list(Pid)));
-grp(P,T)
-  when is_tuple(T) ->
+grp(P,Fun) when is_function(Fun) ->
+  grp(P,list_to_atom(erlang:fun_to_list(Fun)));
+grp(P,Port) when is_port(Port) ->
+  grp(P,list_to_atom(erlang:port_to_list(Port)));
+grp(P,Ref) when is_reference(Ref) ->
+  grp(P,list_to_atom(erlang:ref_to_list(Ref)));
+grp(P,Pid) when is_pid(Pid) ->
+  grp(P,pid_to_atom(Pid));
+grp(P,T) when is_tuple(T) ->
   case lists:member(T,P) of
     true -> grp(P--[T],[]);
     false -> grp(P,tuple_to_list(T))
   end;
-grp(P,L)
-  when is_list(L) ->
+grp(P,L) when is_list(L) ->
   case lists:member(L,P) of
     true -> grp(P--[L],[]);
     false -> grp(grp(P,hd(L)),tl(L))
   end;
-grp(P,T) -> grp(P--[T],[]).
+grp(P,T) ->
+  grp(P--[T],[]).
+
+pid_to_atom(Pid) ->
+  [_,A,B] = string:tokens(pid_to_list(Pid),"<.>"),
+  list_to_atom(lists:flatten(["<0.",A,".",B,">"])).
 
 raw(end_of_trace,State) ->
   State;
@@ -214,15 +249,15 @@ raw_out(_Mess,State = #state{seq=Seq}) ->
 
 mass(end_of_trace = T) ->  T;
 
-mass({port_info,Info}) -> handle_porti(Info),[];
-mass({proc_info,Info}) -> handle_proci(Info),[];
+mass({port_info,Info})  -> handle_porti(Info),[];
+mass({proc_info,Info})  -> handle_proci(Info),[];
 mass({trace_info,Info}) -> handle_traci(Info),[];
 
-mass({trace,A,B,C})    -> mass(A,B,C,no_time);
-mass({trace,A,B,C,D}) -> mass(A,B,{C,D},no_time);
-mass({_,A,B,C,TS})    -> mass(A ,B,C,TS);
-mass({_,A,B,C,D,TS}) -> mass(A,B,{C,D},TS);
-mass(X)                   -> ?log({unrec_msg,X}),[].
+mass({trace,A,B,C})   -> mass(A,B,C,ts());
+mass({trace,A,B,C,D}) -> mass(A,B,{C,D},ts());
+mass({_,A,B,C,TS})    -> mass(A,B,C,ts(TS));
+mass({_,A,B,C,D,TS})  -> mass(A,B,{C,D},ts(TS));
+mass(X)               -> ?log({unrec_msg,X}),[].
 
 mass(Pid,T=send,X,TS) ->                         mass_send(Pid,T,X,TS);
 mass(Pid,T=send_to_non_existing_process,X,TS) -> mass_send(Pid,T,X,TS);
@@ -230,7 +265,7 @@ mass(Pid,T='receive',Message,TS) ->              {T,pi(Pid),Message,TS};
 mass(Pid,T=call,MFA,TS) ->                       {T,pi(Pid),MFA,TS};
 mass(Pid,T=return_to,MFA,TS) ->                  {T,pi(Pid),MFA,TS};
 mass(Pid,T=return_from,{MFA,R},TS) ->            {T,pi(Pid),{MFA,R},TS};
-mass(Pid,T=spawn,{P2,MFA},TS) ->  ins({P2,MFA}),{T,pi(Pid),{pi(P2),MFA},TS};
+mass(Pid,T=spawn,{P2,MFA},TS) ->   ins({P2,MFA}),{T,pi(Pid),{pi(P2),MFA},TS};
 mass(Pid,T=exit,Reason,TS) ->                    {T,pi(Pid),Reason,TS};
 mass(Pid,T=link,Pd,TS) ->                        {T,pi(Pid),pi(Pd),TS};
 mass(Pid,T=unlink,Pd,TS) when is_pid(Pd) ->      {T,pi(Pid),pi(Pd),TS};
@@ -254,6 +289,13 @@ mass_send(Pid,T,{Msg,{To,Node}},TS) when is_atom(To),is_atom(Node) ->
   {T,pi(Pid),{{remote,{To,Node}},Msg},TS}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% convert to {Second,NanoSecond}
+%% if we get {0,S,NS} we assume nanosec-resolution clock.
+%% otherwise now/0-style millisecond-resolution.
+ts() -> ts({0,0,0}).
+ts({0,S,NS}) -> {S,NS};
+ts({MS,S,Ms}) -> {MS*1000000+S,Ms*1000}.
+
 pi(file_driver) -> {trace,file_driver};
 pi(Port) when is_port(Port) ->
   case ets_lup(Port) of
@@ -268,7 +310,6 @@ pi(Pid) when is_pid(Pid) ->
   end.
 
 find_pid(Name) -> ets_lup(Name).
-
 
 handle_porti(Is) -> lists:foreach(fun(I)->ins(I) end,Is).
 

@@ -14,20 +14,20 @@
 -include("log.hrl").
 
 assert(File) ->
-  TabFile = filename:dirname(File)++"/."++filename:basename(File,".trz")++".etz",
+  TFile = filename:dirname(File)++"/."++filename:basename(File,".trz")++".etz",
   {ok,#file_info{mtime=MT}} = file:read_file_info(File),
-  case file:read_file_info(TabFile) of
+  case file:read_file_info(TFile) of
     {ok,#file_info{mtime=TabMT}} when MT < TabMT ->
       %% the tab file exists and is up-to-date
       case sherk_ets:lup(sherk_prof, file) of
-        File -> ?log({is_cached,TabFile});
+        File -> ?log({is_cached,TFile});
         _ ->
           ?log(restoring_tab),
-          try sherk_ets:f2t(TabFile)
+          try sherk_ets:f2t(TFile)
           catch
             _:X ->
               ?log({deleting_bad_tab_file,X}),
-              file:delete(TabFile),
+              file:delete(TFile),
               assert(File)
           end
       end;
@@ -38,9 +38,9 @@ assert(File) ->
       ets:insert(sherk_prof, {file, File}),
       try
         ?log(storing_tab),
-        sherk_ets:t2f([sherk_prof,sherk_scan],TabFile)
+        sherk_ets:t2f([sherk_prof,sherk_scan],TFile)
       catch
-        _:_ -> ?log({creation_failed,TabFile})
+        _:_ -> ?log({creation_failed,TFile})
       end
   end,
   ?log([folding_pids]),

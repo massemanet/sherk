@@ -87,7 +87,7 @@ out(Tag,S,TS) ->
         undefined ->
           ?log([no_time,{state,S}]);
         _ ->
-          T = timer:now_diff(TS,S#s.ts),
+          T = ts_diff(TS,S#s.ts),
           MFA = hd(S#s.stack),
           upd({total,time}, T),
           upd({{pid,time}, S#s.pid}, T),
@@ -157,7 +157,8 @@ erase_bad_stack(S) ->
   mdl({{{stack,time}, S#s.pid, '_'}, '_'}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+ts_diff({S0,NS0},{S1,NS1}) ->
+  (S0-S1)*1000000000+(NS0-NS1).
 
 stk(S,MFA) ->
   case S#s.stack of
