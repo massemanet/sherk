@@ -10,7 +10,6 @@
 
 -include_lib("kernel/include/file.hrl").
 
--export([go/5]).
 -export([fold/3,fold/4]).
 
 -include("log.hrl").
@@ -38,29 +37,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -record(state,{fd,
-               seq = 0,
+               seq = 1,
                hits = 0,
                eof = false,
                cb,
-               acc,
                pattern,
+               raw,
                min,
                max}).
-
-go(FileName,Patt,CBs,'',Max) ->
-  go(FileName,Patt,CBs,0,Max);
-go(FileName,_Patt,raw,Min,Max) ->
-  {ok,FD} = file:open(FileName,[read,raw,binary,compressed]),
-  State = #state{min=Min,max=Max},
-  file_action(FD,State,fun raw/2),
-  file:close(FD);
-go(FileName,Patt,CBs,Min,Max) ->
-  sherk_ets:new(?MODULE),
-  {ok,FD} = file:open(FileName,[read,raw,binary,compressed]),
-  State = #state{pattern=Patt,cb=cbs(CBs),min=Min,max=Max},
-  St = file_action(FD,State,fun do/2),
-  file:close(FD),
-  {hits,St#state.hits}.
 
 fold(Filename,CB,Acc) ->
   fold(Filename,CB,Acc,[]).
@@ -74,12 +58,12 @@ fold(Filename,CB,Acc,Opts) ->
   end.
 
 mk_state(CB,Acc,FD,Opts) ->
-  #state{fd = FD,
-         cb = CB,
-         acc = Acc,
+  #state{fd      = FD,
+         cb      = {CB,Acc},
          pattern = getv(pattern,Opts,''),
-         min = getv(min,Opts,0),
-         max = getv(max,Opts,'')}.
+         raw     = getv(raw,Opts,false),
+         min     = getv(min,Opts,0),
+         max     = getv(max,Opts,'')}.
 
 getv(K,PL,Def) ->
   proplists:get_value(K,PL,Def).
@@ -88,22 +72,24 @@ getv(K,PL,Def) ->
 file_action(S) ->
   file_action(make_chunk(S#state.fd,<<>>),S).
 
-file_action(_,S = #state{eof = true,cb = CB,acc = Acc}) ->
-  S#state{acc = CB(eof,Acc)};
-file_action(eof,S = #state{cb = CB,acc = Acc}) ->
-  S#state{acc = CB(eof,Acc)};
-file_action({Term,Rest},S = #state{cb = CB,acc = Acc}) ->
-  file_action(make_chunk(S#state.fd,Rest),S#state{acc = CB(Term,Acc)}).
+-spec file_action(eof | {any(),binary()}) -> #state{}.
+file_action(eof,S) ->
+  do(eof,S);
+file_action({Term,Rest},S) ->
+  NS = do(Term,S),
+  case NS#state.eof of
+    false -> file_action(make_chunk(S#state.fd,Rest),NS);
+    true  -> NS
+  end.
 
-make_chunk(_FD,eof) ->
+-spec make_chunk(file:fd(),eof | binary()) -> eof | {any(),binary()}.
+make_chunk(_,eof) ->
   eof;
-make_chunk(FD,<<0,Size:32,Tal/binary>> = Bin) ->
-  case Tal of
-    <<Term:Size/binary,Tail/binary>> -> {binary_to_term(Term),Tail};
+make_chunk(FD,Bin) ->
+  case Bin of
+    <<0,Size:32,T:Size/binary,Tail/binary>> -> {binary_to_term(T),Tail};
     _ -> make_chunk(FD,get_more_bytes(FD,Bin))
-  end;
-make_chunk(FD,B) when size(B) < 5 ->
-  make_chunk(FD,get_more_bytes(FD,B)).
+  end.
 
 get_more_bytes(FD,Rest) ->
   case file:read(FD,?CHUNKSIZE) of
@@ -111,59 +97,35 @@ get_more_bytes(FD,Rest) ->
     _ -> eof
   end.
 
-%%% CBs - CB|list(CB)
-%%% CB - fun(F)|atom(M)|{fun(F),term(Init)}|{atom(M),term(Init)}
-cbs([]) -> [];
-cbs([CB|T]) -> [to_cb(CB)|cbs(T)];
-cbs(Term) -> cbs([Term]).
-
-to_cb('')                               -> to_cb({'',standard_io});
-to_cb(Mod)        when is_atom(Mod)     -> to_cb({Mod,initial});
-to_cb(Fun)        when is_function(Fun) -> to_cb({Fun,initial});
-to_cb({'',Out})                         -> {fun write_msg/3,Out};
-to_cb({Mod,Init}) when is_atom(Mod)     -> is_cb(Mod),{{Mod,go},Init};
-to_cb({Fun,Init}) when is_function(Fun) -> is_cb(Fun),{Fun,Init}.
-
-is_cb(M) when is_atom(M) -> true = lists:member({go,3},M:module_info(exports));
-is_cb(F) when is_function(F) -> {arity,3} = erlang:fun_info(F,arity).
-
-do(end_of_trace,State) ->
-  do_do(end_of_trace,State);
-do(_Mess,#state{max = Max,seq = Seq} = Stat) when Max < Seq ->
-  Stat#state{eof=true};
-do(Mess,#state{min = Min,seq = Seq} = Stat) when Seq < Min ->
-  case mass(Mess) of
-    [] -> Stat;
-    _ -> Stat#state{seq = Seq+1}
+-spec do(any(),#state{}) -> #state{}.
+do(M,S) when M =:= eof orelse (S#state.max < S#state.seq) ->
+  NS = call_cb(eof,S),
+  NS#state{eof=true,hits=S#state.hits};
+do(M,#state{min = Min,seq = Seq} = S) when Seq < Min ->
+  case S#state.raw orelse not is_meta(M) of
+    false-> S;
+    true -> S#state{seq = Seq+1}
   end;
-do(Mess,Stat) ->
-  case mass(Mess) of
-    [] -> Stat;
-    Ms -> do_do(Ms,Stat)
+do(M,S) ->
+  case {S#state.raw, is_meta(M)} of
+    {true ,true } -> call_cb(M,S);
+    {true ,false} -> call_cb(M,S);
+    {false,true } -> S;
+    {false,false} -> call_cb(mass(M),S)
   end.
 
-do_do(end_of_trace = Ms,#state{cbs=CBs,seq=Seq} = State) ->
-  State#state{cbs=do_safe_cbs(CBs,Ms,Seq,[])};
-do_do(Mess,#state{pattern=Patt,cbs=CBs,seq=Seq} = State) ->
-  case grep(Patt,Mess) of
-    false -> State#state{seq = Seq+1};
+-spec call_cb(any(),#state{}) -> #state{}.
+call_cb(M,S) ->
+  case S#state.pattern =:= '' orelse grep(S#state.pattern,M) of
+    false-> S#state{seq = S#state.seq+1};
     true ->
-      State#state{seq = Seq+1,
-                  hits = State#state.hits+1,
-                  cbs=do_safe_cbs(CBs,Mess,Seq,[])}
+      S#state{seq = S#state.seq+1,
+              hits = S#state.hits+1,
+              cb = safe_cb(M,S)}
   end.
 
-do_safe_cbs([],_,_,O) -> lists:reverse(O);
-do_safe_cbs([CB|CBs],Msg,Seq,O) ->
-  do_safe_cbs(CBs,Msg,Seq,[safe_cb(CB,Msg,Seq)|O]).
-
-safe_cb({{M,F},State},Msg,Seq) -> {{M,F},M:F(Msg,Seq,State)};
-safe_cb({Fun,State},Msg,Seq) -> {Fun,Fun(Msg,Seq,State)}.
-
-write_msg(Msg,Seq,F) when is_list(F) -> write_msg(Msg,Seq,open(F));
-write_msg(Msg,Seq,FD) -> io:fwrite(FD,"~.9.0w ~w~n",[Seq,Msg]),FD.
-
-open(File) -> {ok,FD}=file:open(File,[write]),FD.
+safe_cb(M,#state{cb = {Fun,Acc},seq = Seq}) ->
+  {Fun,Fun({Seq,M},Acc)}.
 
 grep('',_) -> true;
 grep(P,T) when is_list(P) ->
@@ -200,26 +162,6 @@ pid_to_atom(Pid) ->
   [_,A,B] = string:tokens(pid_to_list(Pid),"<.>"),
   list_to_atom(lists:flatten(["<0.",A,".",B,">"])).
 
-raw(end_of_trace,State) ->
-  State;
-raw(Mess,State) ->
-  case element(1,Mess) of
-    trace -> raw_out(Mess,State);
-    trace_ts -> raw_out(Mess,State);
-    _ -> State
-  end.
-
-raw_out(_Mess,State = #state{seq=Seq}) ->
-  case {State#state.min < Seq,Seq < State#state.max} of
-    {true,true} ->
-      %%io:fwrite("~w - ~w~n",[Seq,Mess]),
-      State#state{seq=Seq+1};
-    {true,false} ->
-      State#state{eof=true};
-    {false,true} ->
-      State#state{seq=Seq+1}
-  end.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% format is {Tag,PI,Data,Timestamp}
 %%% PI is {pid(),Info}
@@ -246,6 +188,12 @@ raw_out(_Mess,State = #state{seq=Seq}) ->
 %%% gc_start,                     Info
 %%% gc_end,                       Info
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+is_meta(M) ->
+  case element(1,M) of
+    trace    -> false;
+    trace_ts -> false;
+    _        -> true
+  end.
 
 mass(end_of_trace = T) ->  T;
 
@@ -253,11 +201,11 @@ mass({port_info,Info})  -> handle_porti(Info),[];
 mass({proc_info,Info})  -> handle_proci(Info),[];
 mass({trace_info,Info}) -> handle_traci(Info),[];
 
-mass({trace,A,B,C})   -> mass(A,B,C,ts());
-mass({trace,A,B,C,D}) -> mass(A,B,{C,D},ts());
-mass({_,A,B,C,TS})    -> mass(A,B,C,ts(TS));
-mass({_,A,B,C,D,TS})  -> mass(A,B,{C,D},ts(TS));
-mass(X)               -> ?log({unrec_msg,X}),[].
+mass({trace,A,B,C})         -> mass(A,B,C,ts());
+mass({trace,A,B,C,D})       -> mass(A,B,{C,D},ts());
+mass({trace_ts,A,B,C,TS})   -> mass(A,B,C,ts(TS));
+mass({trace_ts,A,B,C,D,TS}) -> mass(A,B,{C,D},ts(TS));
+mass(X)                     -> ?log({unrec_msg,X}),[].
 
 mass(Pid,T=send,X,TS) ->                         mass_send(Pid,T,X,TS);
 mass(Pid,T=send_to_non_existing_process,X,TS) -> mass_send(Pid,T,X,TS);
