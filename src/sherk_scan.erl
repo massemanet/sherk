@@ -15,23 +15,18 @@
 -include("log.hrl").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%  go(FileName,Patt,CBs,Min,Max)
-%%%  scans a trace file for messages. filters on sequence number and
-%%%  a pattern. if the sequence number is between Min and Max, and the
-%%%  message matches Patt, the massage is passed to the funs in CBs.
+%%%  fold(Filename,Fun,Acc0,Opts).
+%%%  Opts - [Opt] - defaults to []
+%%%  Opt - {pattern,Patt} | {min,Min} | {max,Max} | {raw,boolean(Raw)}
+%%%  folds Fun over trace messages in a trace file.
+%%%  prefilters on sequence number (Min and Max) and a pattern Patt.
 %%%
 %%%  Filename - string()
-%%%  Patt - list(term(P))|term(P) - all terms P must match the message.
+%%%  Patt - list(term(P))|term(P) - all terms P must exist in the message.
 %%%    funs, ports, refs and pids ar turned into atoms.
-%%%  CBs - list(function()) -  CB|list(CB)
-%%%  CB - fun(F)|atom(M)|{fun(F), term(Init)}|{atom(M), term(Init)}
-%%%  M - if M is '', the default callback is called. it will write the
-%%%    trace message to a file (if Init is a string) or the screen.
-%%%    otherwise, M:go(Msg,Seq,State) is called
+%%%  Fun - fun(Msg,Acc0) -> Acc1.
 %%%  Msg - the trace message
-%%%  Seq - the trace message sequence number
-%%%  State - the callback functions state
-%%%  Init - the initial value of State. defaults to 'initial'
+%%%  Raw - boolean() - if true, trace messages are normalized to sherk form.
 %%%  Min - integer() - min sequence number
 %%%  Max - integer() - max sequence number
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -46,13 +41,14 @@
                min,
                max}).
 
-fold(Filename,CB,Acc) ->
-  fold(Filename,CB,Acc,[]).
-fold(Filename,CB,Acc,Opts) ->
+fold(Filename,Fun,Acc) ->
+  fold(Filename,Fun,Acc,[]).
+fold(Filename,Fun,Acc0,Opts) ->
   sherk_ets:new(?MODULE),
   {ok,FD} = file:open(Filename,[read,raw,binary,compressed]),
   try
-    file_action(mk_state(CB,Acc,FD,Opts))
+    {_,Acc} = (file_action(mk_state(Fun,Acc0,FD,Opts)))#state.cb,
+    Acc
   after
     file:close(FD)
   end.
@@ -101,39 +97,40 @@ get_more_bytes(FD,Rest) ->
 do(M,S) when M =:= eof orelse (S#state.max < S#state.seq) ->
   NS = call_cb(eof,S),
   NS#state{eof=true,hits=S#state.hits};
-do(M,#state{min = Min,seq = Seq} = S) when Seq < Min ->
-  case S#state.raw orelse not is_meta(M) of
-    false-> S;
-    true -> S#state{seq = Seq+1}
+do(M,S) when S#state.seq < S#state.min ->
+  case is_meta(M) of
+    true -> S;
+    false-> bump_seq(S)
   end;
 do(M,S) ->
   case {S#state.raw, is_meta(M)} of
     {true ,true } -> call_cb(M,S);
-    {true ,false} -> call_cb(M,S);
-    {false,true } -> S;
-    {false,false} -> call_cb(mass(M),S)
+    {true ,false} -> bump_seq(call_cb(M,S));
+    {false,true } -> mass(M),S;
+    {false,false} -> bump_seq(call_cb(mass(M),S))
   end.
+
+bump_seq(S) ->
+  S#state{seq = S#state.seq+1}.
 
 -spec call_cb(any(),#state{}) -> #state{}.
 call_cb(M,S) ->
-  case S#state.pattern =:= '' orelse grep(S#state.pattern,M) of
-    false-> S#state{seq = S#state.seq+1};
-    true ->
-      S#state{seq = S#state.seq+1,
-              hits = S#state.hits+1,
-              cb = safe_cb(M,S)}
+  case M =:= eof orelse grep(S#state.pattern,M) of
+    false-> S;
+    true -> S#state{hits = S#state.hits+1,cb = safe_cb(M,S)}
   end.
 
 safe_cb(M,#state{cb = {Fun,Acc},seq = Seq}) ->
   {Fun,Fun({Seq,M},Acc)}.
 
+-spec grep(any(),any()) -> boolean().
 grep('',_) -> true;
-grep(P,T) when is_list(P) ->
+grep(P,T) when not is_list(P) -> grep([P],T);
+grep(P,T) ->
   case grp(P,T) of
     [] -> true;
-    _ -> false
-  end;
-grep(P,T) -> grep([P],T).
+    _  -> false
+  end.
 
 grp([],_) -> [];
 grp(P,[]) -> P;
