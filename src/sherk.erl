@@ -17,8 +17,6 @@
 %% internal exports
 -export([log/2]).
 
--include("log.hrl").
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 go() -> spawn_link(fun sherk_gtk:init/0).
 

@@ -50,6 +50,7 @@ kill() ->
 %% to be deferred to the target
 
 check_and_spawn(Time,Flavor,Procs,Targs,Dest) ->
+  chk_flavor(Flavor),
   LD = dict:from_list(
          [{time  ,chk_time(Time)},
           {flags ,flags(Flavor)},
@@ -63,13 +64,15 @@ check_and_spawn(Time,Flavor,Procs,Targs,Dest) ->
   Pid ! {init,LD},
   Pid.
 
+chk_flavor(call) -> ok;
+chk_flavor(proc) -> ok;
+chk_flavor(Flav) -> error({bad_flavor,Flav}).
+
 flags(proc) -> [procs,running,garbage_collection,set_on_spawn];
-flags(call) -> [call,return_to,arity|flags(proc)];
-flags(Flavor) -> error({bad_flavor,Flavor}).
+flags(call) -> [call,return_to,arity|flags(proc)].
 
 rtps(call) -> [{{'_','_','_'},[],[local]}];
-rtps(proc) -> [];
-rtps(Flav) -> error({bad_flavor,Flav}).
+rtps(proc) -> [].
 
 chk_targs(Targs) ->
   lists:map(fun(T)->chk_conn(T) end,Targs).

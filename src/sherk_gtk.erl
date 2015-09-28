@@ -184,7 +184,7 @@ aq_go(LD) ->
   Time = aq_get_time(),
   Targs = aq_get_nodes(),
   Flavor = aq_get_flavor(),
-  Dest = {file,aq_get_dest(),0,"/tmp"},
+  Dest = {file,aq_get_dest()},
   ?log([{time,Time},
         {flavor,Flavor},
         {targs,Targs},
