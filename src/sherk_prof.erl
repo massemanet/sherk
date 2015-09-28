@@ -7,22 +7,21 @@
 %%%-------------------------------------------------------------------
 -module(sherk_prof).
 
--export([go/3]).
+-export([go/2]).
 
 -include("log.hrl").
 
-go(Msg, Seq, initial)        -> go(Msg, Seq, init());
-go(end_of_trace, Seq, State) -> terminate(Seq,State), State;
-go(Msg, Seq, State)          -> handler(Msg) ! {msg,Seq,Msg}, State.
+go({Seq,Msg},[])    -> go({Seq,Msg},init());
+go(eof,State)       -> terminate(State), State;
+go({Seq,Msg},State) -> handler(Msg) ! {msg,Seq,Msg}, State.
 
 init() ->
   ?log([{starting,?MODULE}]),
   sherk_ets:new(sherk_prof),
   {start,prfTime:ts()}.
 
-terminate(Seq,{start,Start}) ->
+terminate({start,Start}) ->
   ?log([{finishing,sherk_prof},
-        {seq,Seq},
         {time,timer:now_diff(prfTime:ts(),Start)/1000000},
         {procs,length(ets:match(sherk_prof,{{handler,'$1'},'_'}))}]),
   TermFun = fun({{handler,_},Pid},_) -> Pid ! quit; (_,_) -> ok end,

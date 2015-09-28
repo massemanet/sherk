@@ -121,7 +121,10 @@ call_cb(M,S) ->
   end.
 
 safe_cb(M,#state{cb = {Fun,Acc},seq = Seq}) ->
-  {Fun,Fun({Seq,M},Acc)}.
+  case M of
+    eof -> {Fun,Fun(eof,Acc)};
+    _   -> {Fun,Fun({Seq,M},Acc)}
+  end.
 
 -spec grep(any(),any()) -> boolean().
 grep('',_) -> true;
@@ -191,8 +194,6 @@ is_meta(M) ->
     trace_ts -> false;
     _        -> true
   end.
-
-mass(end_of_trace = T) ->  T;
 
 mass({port_info,Info})  -> handle_porti(Info),[];
 mass({proc_info,Info})  -> handle_proci(Info),[];

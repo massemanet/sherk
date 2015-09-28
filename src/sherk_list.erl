@@ -26,15 +26,6 @@ get_list(Pid) ->
 
 str(X) -> lists:flatten(io_lib:fwrite("~p",[X])).
 
-%% tag(P) ->
-%%     case sherk_ets:lup(sherk_scan,P) of
-%%         {M,F,As} when is_list(As) -> mangle(M,F,As);
-%%         X -> X
-%%     end.
-
-%% mangle(M,F,As) ->
-%%     {M,F,length(As)}.
-
 percent(_,0) -> 0;
 percent(A,B) -> round(100*A/B).
 
