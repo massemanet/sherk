@@ -1,8 +1,9 @@
 %%%-------------------------------------------------------------------
 %%% File    : sherk_prof.erl
 %%% Author  : Mats Cronqvist <locmacr@mwlx084>
-%%% Description :
-%%%
+%%% Description :called by sherk_scan:fold (from sherk_tab:assert/1).
+%%%              fills the sherk_prof table with annotated gall graph data.
+%%%              spawns a handler proc for each pid in the trace file.
 %%% Created : 30 Aug 2006 by Mats Cronqvist <locmacr@mwlx084>
 %%%-------------------------------------------------------------------
 -module(sherk_prof).
@@ -24,8 +25,8 @@ terminate({start,Start}) ->
   ?log([{finishing,sherk_prof},
         {time,timer:now_diff(prfTime:ts(),Start)/1000000},
         {procs,length(ets:match(sherk_prof,{{handler,'$1'},'_'}))}]),
-  TermFun = fun({{handler,_},Pid},_) -> Pid ! quit; (_,_) -> ok end,
-  ets:foldl(TermFun,[],sherk_prof).
+  QuitFun = fun({{handler,_},Pid},_) -> Pid ! quit; (_,_) -> ok end,
+  ets:foldl(QuitFun,[],sherk_prof).
 
 handler({spawn,_,{Pid,_},_,_}) -> assert_handler(Pid);
 handler({_,{Pid,_},_,_}) -> assert_handler(Pid).

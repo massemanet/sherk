@@ -1,7 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% File    : sherk_tab.erl
 %%% Author  : Mats Cronqvist <locmacr@mwlx084>
-%%% Description :
+%%% Description : open the trace file, and generate the sherk_prof table
+%%%               (by running sherk_scan:fold(fun sherk_prof:go...))
 %%%
 %%% Created : 21 Aug 2006 by Mats Cronqvist <locmacr@mwlx084>
 %%%-------------------------------------------------------------------
@@ -15,14 +16,14 @@
 
 assert(File) ->
   TFile = filename:dirname(File)++"/."++filename:basename(File,".trz")++".etz",
-  {ok,#file_info{mtime=MT}} = file:read_file_info(File),
+  {ok,#file_info{mtime = MT}} = file:read_file_info(File),
   case file:read_file_info(TFile) of
-    {ok,#file_info{mtime=TabMT}} when MT < TabMT ->
+    {ok,#file_info{mtime = TabMT}} when MT < TabMT ->
       %% the tab file exists and is up-to-date
-      case sherk_ets:lup(sherk_prof, file) of
+      case sherk_ets:lup(sherk_prof,file) of
         File -> ?log({is_cached,TFile});
         _ ->
-          ?log(restoring_tab),
+          ?log({restoring_tab,sherk_prof}),
           try sherk_ets:f2t(TFile)
           catch
             _:X ->
