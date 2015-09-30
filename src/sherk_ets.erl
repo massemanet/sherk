@@ -22,25 +22,34 @@ assert(Tab) ->
     _ -> ok
   end.
 
-new(Tab) -> new(Tab, [named_table,public,ordered_set]).
+new(Tab) ->
+  new(Tab, [named_table,public,ordered_set]).
+
 new(Tab, Opts) ->
   kill(Tab),
   Mama = self(),
-  Ref = make_ref(),
-  E = fun() -> register(?TAB(Tab),self()),
-               ets:new(Tab,Opts),
-               Mama ! Ref,
-               receive {quit, P} -> P ! Tab end
-      end,
-  spawn(E),
-  receive Ref -> ok end,
-  Tab.
+  {Pid,Ref} = spawn_monitor(fun() -> newf(Tab,Opts,Mama) end),
+  receive
+    Pid -> unlink(Pid),Tab;
+    {'DOWN',Ref,_,Pid,X} -> error({fail_ets_table_create,X})
+  end.
+
+newf(Tab,Opts,Mama) ->
+  register(?TAB(Tab),self()),
+  ets:new(Tab,Opts),
+  Mama ! self(),
+  receive {quit,P} -> P ! Tab end.
 
 kill(Tab) ->
-  try
-    ?TAB(Tab) ! {quit, self()},
-    receive Tab -> ok end
-  catch _:_ -> ok
+  case whereis(?TAB(Tab)) of
+    undefined -> ok;
+    Pid ->
+      Ref = monitor(process,Pid),
+      Pid ! {quit,self()},
+      receive
+        Tab -> ok;
+        {'DOWN',Ref,_,Pid,X} -> error({fail_ets_table_kill,X})
+      end
   end.
 
 upd(Tab, Key) -> upd(Tab, Key, 1).
