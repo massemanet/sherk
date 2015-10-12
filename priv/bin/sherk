@@ -19,9 +19,9 @@ if [ -L $EPATH ];then
     EPATH=`readlink $EPATH`
 fi
 
-EPATH=`dirname $EPATH`
+EPATH=$(cd $(dirname $EPATH) && pwd)
 
-n=3
+n=2
 SPATH=`(cd $EPATH ; pwd)`
 while [ 0 -lt "$n" ]; do SPATH=`dirname $SPATH`; let n=n-1; done
 
