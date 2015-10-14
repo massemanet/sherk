@@ -1,32 +1,32 @@
 %%%-------------------------------------------------------------------
 %%% File    : sherk_prof.erl
 %%% Author  : Mats Cronqvist <locmacr@mwlx084>
-%%% Description :
-%%%
+%%% Description :called by sherk_scan:fold (from sherk_tab:assert/1).
+%%%              fills the sherk_prof table with annotated gall graph data.
+%%%              spawns a handler proc for each pid in the trace file.
 %%% Created : 30 Aug 2006 by Mats Cronqvist <locmacr@mwlx084>
 %%%-------------------------------------------------------------------
 -module(sherk_prof).
 
--export([go/3]).
+-export([go/2]).
 
 -include("log.hrl").
 
-go(Msg, Seq, initial)        -> go(Msg, Seq, init());
-go(end_of_trace, Seq, State) -> terminate(Seq,State), State;
-go(Msg, Seq, State)          -> handler(Msg) ! {msg,Seq,Msg}, State.
+go({Seq,Msg},[])    -> go({Seq,Msg},init());
+go(eof,State)       -> terminate(State), State;
+go({Seq,Msg},State) -> handler(Msg) ! {msg,Seq,Msg}, State.
 
 init() ->
   ?log([{starting,?MODULE}]),
   sherk_ets:new(sherk_prof),
   {start,prfTime:ts()}.
 
-terminate(Seq,{start,Start}) ->
+terminate({start,Start}) ->
   ?log([{finishing,sherk_prof},
-        {seq,Seq},
         {time,timer:now_diff(prfTime:ts(),Start)/1000000},
         {procs,length(ets:match(sherk_prof,{{handler,'$1'},'_'}))}]),
-  TermFun = fun({{handler,_},Pid},_) -> Pid ! quit; (_,_) -> ok end,
-  ets:foldl(TermFun,[],sherk_prof).
+  QuitFun = fun({{handler,_},Pid},_) -> Pid ! quit; (_,_) -> ok end,
+  ets:foldl(QuitFun,[],sherk_prof).
 
 handler({spawn,_,{Pid,_},_,_}) -> assert_handler(Pid);
 handler({_,{Pid,_},_,_}) -> assert_handler(Pid).
@@ -87,7 +87,7 @@ out(Tag,S,TS) ->
         undefined ->
           ?log([no_time,{state,S}]);
         _ ->
-          T = timer:now_diff(TS,S#s.ts),
+          T = ts_diff(TS,S#s.ts),
           MFA = hd(S#s.stack),
           upd({total,time}, T),
           upd({{pid,time}, S#s.pid}, T),
@@ -157,7 +157,8 @@ erase_bad_stack(S) ->
   mdl({{{stack,time}, S#s.pid, '_'}, '_'}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+ts_diff({S0,NS0},{S1,NS1}) ->
+  (S0-S1)*1000000000+(NS0-NS1).
 
 stk(S,MFA) ->
   case S#s.stack of

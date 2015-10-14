@@ -1,7 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% File    : sherk_tab.erl
 %%% Author  : Mats Cronqvist <locmacr@mwlx084>
-%%% Description :
+%%% Description : open the trace file, and generate the sherk_prof table
+%%%               (by running sherk_scan:fold(fun sherk_prof:go...))
 %%%
 %%% Created : 21 Aug 2006 by Mats Cronqvist <locmacr@mwlx084>
 %%%-------------------------------------------------------------------
@@ -14,33 +15,33 @@
 -include("log.hrl").
 
 assert(File) ->
-  TabFile = filename:dirname(File)++"/."++filename:basename(File,".trz")++".etz",
-  {ok,#file_info{mtime=MT}} = file:read_file_info(File),
-  case file:read_file_info(TabFile) of
-    {ok,#file_info{mtime=TabMT}} when MT < TabMT ->
+  TFile = filename:dirname(File)++"/."++filename:basename(File,".trz")++".etz",
+  {ok,#file_info{mtime = MT}} = file:read_file_info(File),
+  case file:read_file_info(TFile) of
+    {ok,#file_info{mtime = TabMT}} when MT < TabMT ->
       %% the tab file exists and is up-to-date
-      case sherk_ets:lup(sherk_prof, file) of
-        File -> ?log({is_cached,TabFile});
+      case sherk_ets:lup(sherk_prof,file) of
+        File -> ?log({is_cached,TFile});
         _ ->
-          ?log(restoring_tab),
-          try sherk_ets:f2t(TabFile)
+          ?log({restoring_tab,sherk_prof}),
+          try sherk_ets:f2t(TFile)
           catch
             _:X ->
               ?log({deleting_bad_tab_file,X}),
-              file:delete(TabFile),
+              file:delete(TFile),
               assert(File)
           end
       end;
     _ ->
       %% make tab and save it
       ?log([creating_tab]),
-      sherk_scan:go(File,'',sherk_prof,0,''),
+      sherk_scan:fold(File,fun sherk_prof:go/2,[]),
       ets:insert(sherk_prof, {file, File}),
       try
         ?log(storing_tab),
-        sherk_ets:t2f([sherk_prof,sherk_scan],TabFile)
+        sherk_ets:t2f([sherk_prof,sherk_scan],TFile)
       catch
-        _:_ -> ?log({creation_failed,TabFile})
+        _:_ -> ?log({creation_failed,TFile})
       end
   end,
   ?log([folding_pids]),

@@ -7,29 +7,9 @@ usage(){
     exit
 }
 
-if [ ${0:0:1} == "/" ];then
-    EPATH=$0
-elif [ -x $PWD/$0 ];then
-    EPATH=$PWD/$0
-else
-    EPATH=`which $0`
-fi
-
-if [ -L $EPATH ];then
-    EPATH=`readlink $EPATH`
-fi
-
-EPATH=`dirname $EPATH`
-
-n=3
-SPATH=`(cd $EPATH ; pwd)`
-while [ 0 -lt "$n" ]; do SPATH=`dirname $SPATH`; let n=n-1; done
-
-PATHS=""
-for p in eper gtknode; do
-    BPATH=`find $SPATH -name $p.beam`
-    PATHS=$PATHS" -pa "`dirname $BPATH`
-done
+SELF_DIR=$(readlink -e $(dirname $BASH_SOURCE))
+EBIN=$(readlink -e $SELF_DIR/../../ebin)
+DEPS=$(readlink -e $SELF_DIR/../../deps)
 
 detach="-detached"
 VSN=""
@@ -71,4 +51,4 @@ name="sherk_"$$
 FLAGS="$detach -boot start_sasl -sasl errlog_type error +A16"
 DISTR="-hidden -sname $name $cookie $nettick"
 
-erl $VSN $FLAGS $DISTR $PATHS $START
+erl $VSN $FLAGS $DISTR -pa $EBIN -pa $DEPS/*/ebin $START

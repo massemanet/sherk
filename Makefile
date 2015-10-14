@@ -1,6 +1,6 @@
 ## -*- mode: Makefile; fill-column: 80; comment-column: 67; -*-
 
-REBAR   ?= $(shell which rebar 2> /dev/null || which ./rebar)
+REBAR ?= $(shell which rebar 2> /dev/null || which ./rebar)
 
 .PHONY: all compile compile-all get-deps update-deps clean test
 .PHONY: release release_patch release_minor release_major
