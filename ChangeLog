@@ -1,0 +1,227 @@
+commit 8a1fb483d7fc3cfd7036ba315248422052944e84
+Author: mats cronqvist <masse@klarna.com>
+Date:   Wed Oct 14 13:42:17 2015 +0200
+
+    v1.0.0
+
+src/sherk.app.src
+
+commit 95c43249a230926c70027ec1c5780b0e9be0b098
+Author: mats cronqvist <masse@klarna.com>
+Date:   Wed Oct 14 13:34:58 2015 +0200
+
+    move to gtknode 1.0.0
+
+rebar.config
+
+commit 2261ad29675200cee831c89b29550b451482d48d
+Author: mats cronqvist <masse@klarna.com>
+Date:   Wed Oct 14 13:15:47 2015 +0200
+
+    fix start script
+
+priv/bin/sherk
+
+commit b2af7f5121eaffcf36bea3a0c2b607340f5475e6
+Author: mats cronqvist <masse@klarna.com>
+Date:   Mon Oct 12 16:52:48 2015 +0200
+
+    reintroduce rebar
+
+.gitignore
+Makefile
+priv/bin/sherk
+rebar.config
+
+commit 60ecbf21ae2ca4c39b6ef5eb93fe393df386d3f9
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Sep 30 14:24:50 2015 +0200
+
+    debugging
+
+src/sherk_dump.erl
+
+commit f064ef815cf87b1c8a588a766953cbf4adea6933
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Sep 30 14:22:54 2015 +0200
+
+    cosmetic
+
+src/sherk_list.erl
+src/sherk_prof.erl
+src/sherk_tab.erl
+
+commit 3489a3e0e0dc8aa7c025670be5b91e7e9967f3bb
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Sep 30 14:22:41 2015 +0200
+
+    fix race condition in table create
+
+src/sherk_ets.erl
+
+commit 5c6bce32baad8d7bccf51fcc0d4a6b5964228288
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Mon Sep 28 16:32:43 2015 +0200
+
+    fix dialyzer error
+
+src/sherk.erl
+src/sherk_aquire.erl
+src/sherk_gtk.erl
+
+commit cf6864b4bd9c08629eed5a8ace61199ca74555ee
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Mon Sep 28 16:14:56 2015 +0200
+
+    break out GTK bits to sherk_gtk
+
+src/sherk.erl
+src/sherk_gtk.erl
+
+commit 93814d245c19ac2a817f8cb1607565396536d9be
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Mon Sep 28 15:53:59 2015 +0200
+
+    fallout from sherk_scan refactor
+
+src/sherk.erl
+src/sherk_list.erl
+src/sherk_prof.erl
+src/sherk_scan.erl
+src/sherk_tab.erl
+
+commit aabb7ba40736899607161248c9f11be9f90519db
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Mon Sep 28 14:47:01 2015 +0200
+
+    refactored sherk_scan to fold semantics
+
+src/sherk_scan.erl
+
+commit 30dac5cf821d9b2ce1b70e72a1e3bc11fbe7b619
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Fri Sep 25 16:42:50 2015 +0200
+
+    refactored sherk_scan
+
+src/sherk_scan.erl
+
+commit 26570bc2af0ccadbb2f4ce17d1541d5c8714d225
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Sep 23 16:45:24 2015 +0200
+
+    refactoring scanner
+
+src/sherk_prof.erl
+src/sherk_scan.erl
+src/sherk_tab.erl
+
+commit b4a6286986e31a98b06eb983646b1a2a9b3bcfcc
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Thu Sep 17 13:33:41 2015 +0200
+
+    cosmetic
+
+src/sherk_scan.erl
+
+commit 9f17096ffdf8a9dbda9c08bacbcd4025decddf3b
+Author: mats cronqvist <masse@klarna.com>
+Date:   Thu Sep 17 11:20:30 2015 +0200
+
+    print tracing info
+
+src/sherk_aquire.erl
+src/sherk_target.erl
+
+commit bc13ffdfba2435941ff89d3ce75f9fab67cb2d9b
+Author: mats cronqvist <masse@klarna.com>
+Date:   Wed Sep 16 14:48:33 2015 +0200
+
+    refactor cpu_timestamp detection
+
+src/sherk_target.erl
+
+commit 065e205adcd4b3292e19fde9bdaeb28650867fa4
+Author: mats cronqvist <masse@klarna.com>
+Date:   Wed Sep 16 14:46:54 2015 +0200
+
+    fix typo dict:find/dict:fetch
+
+src/sherk_aquire.erl
+
+commit 2d75f03e87e72a82a5251085f58d3aad00047a4c
+Author: mats cronqvist <masse@klarna.com>
+Date:   Wed Aug 19 17:53:30 2015 +0200
+
+    fix some typos
+
+src/sherk_aquire.erl
+src/sherk_scan.erl
+
+commit 2eff382ff78ae473ac68e08ca9d6084a01513011
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Mon Aug 10 10:16:30 2015 +0200
+
+    move stuff around to get a GTk-less aquire subset
+
+src/sherk.erl
+src/sherk_aquire.erl
+src/sherk_target.erl
+
+commit 427a85718610dae5f9c4d75f041c2ba63be4d53c
+Author: mats cronqvist <mats.cronqvist@gmail.com>
+Date:   Tue Jul 14 23:21:30 2015 +0200
+
+    doc
+
+INSTALL
+
+commit be9ed830c15c524cef8e161a2eecc2fb5f7fafe3
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Tue Jul 14 23:10:23 2015 +0200
+
+    Update README.md
+
+README.md
+
+commit da3e293f412af6d64c95989a85557766764a7122
+Author: mats cronqvist <mats.cronqvist@gmail.com>
+Date:   Tue Jul 14 22:51:37 2015 +0200
+
+    init
+
+.gitignore
+INSTALL
+Makefile
+README.md
+bin/release.sh
+priv/bin/gperf
+priv/bin/sherk
+rebar
+rebar.config
+src/gperf.erl
+src/gperf.glade
+src/gperf.gladep
+src/gperfConsumer.erl
+src/gperfGtk.erl
+src/log.hrl
+src/sherk.app.src
+src/sherk.erl
+src/sherk.glade
+src/sherk.gladep
+src/sherk_aquire.erl
+src/sherk_ets.erl
+src/sherk_list.erl
+src/sherk_prof.erl
+src/sherk_scan.erl
+src/sherk_tab.erl
+src/sherk_target.erl
+src/sherk_tree.erl
+
+commit 81a80861a076b2c7b520c5f0d4a2ad36c0aa0b44
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Tue Jul 14 19:12:09 2015 +0200
+
+    Initial commit
+
+LICENSE
