@@ -1,9 +1,36 @@
-commit 8a1fb483d7fc3cfd7036ba315248422052944e84
+commit 5d4aa34180f82939a82367c787b2a13fdc9d03e9
+Author: mats cronqvist <masse@klarna.com>
+Date:   Mon Nov 2 15:44:11 2015 +0100
+
+    v1.0.1
+
+src/sherk.app.src
+
+commit 70a023e7de09b656f2dad6f7ba55865dbc08db08
+Author: mats cronqvist <masse@klarna.com>
+Date:   Mon Nov 2 15:43:33 2015 +0100
+
+    rebar tweak
+
+Makefile
+
+commit df1060a64e35e8ba1110a2ea85af7ec77ef4763f
+Author: mats cronqvist <masse@klarna.com>
+Date:   Mon Nov 2 15:38:26 2015 +0100
+
+    makefile tweak
+
+Makefile
+rebar.config
+
+commit b97f07d66b1960d0c5be876283b2633998e78b14
 Author: mats cronqvist <masse@klarna.com>
 Date:   Wed Oct 14 13:42:17 2015 +0200
 
     v1.0.0
 
+AUTHORS
+ChangeLog
 src/sherk.app.src
 
 commit 95c43249a230926c70027ec1c5780b0e9be0b098
