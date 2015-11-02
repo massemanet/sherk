@@ -2,24 +2,20 @@
 
 REBAR ?= $(shell which rebar 2> /dev/null || which ./rebar)
 
-.PHONY: all compile compile-all get-deps update-deps clean test
+.PHONY: all compile deps clean test
 .PHONY: release release_patch release_minor release_major
 .PHONY: eunit xref dialyze
 
 all: compile
 
-compile: get-deps
+compile:
+	@$(REBAR) get-deps
 	@$(REBAR) compile skip_deps=true
 
-compile-all: get-deps
-	@$(REBAR) compile
-
-get-deps:
-	@$(REBAR) get-deps
-
-update-deps:
+deps:
 	@$(REBAR) update-deps
 	@$(REBAR) get-deps
+	@$(REBAR) compile
 
 clean:
 	@find . -name "*~" -exec rm {} \;
