@@ -9,12 +9,10 @@ REBAR ?= $(shell which rebar 2> /dev/null || which ./rebar)
 all: compile
 
 compile:
-	@$(REBAR) get-deps
 	@$(REBAR) compile skip_deps=true
 
 deps:
 	@$(REBAR) update-deps
-	@$(REBAR) get-deps
 	@$(REBAR) compile
 
 clean:
@@ -40,10 +38,10 @@ release: release_patch
 #############################################################################
 ## testing
 
-eunit: compile-all
+eunit: compile
 	@$(REBAR) eunit skip_deps=true
 
-xref: compile-all
+xref: compile
 	@$(REBAR) compile xref skip_deps=true
 
 ~/.dialyzer_plt:
