@@ -3,6 +3,7 @@
 usage(){
     U1="usage: $0 [-setcookie <cookie>] [-nocookie] "
     U2="[-nettick <tick>] [-dbg] [-vsn <OTP version>]"
+    echo $1
     echo $U1 $U2
     exit
 }
@@ -19,7 +20,7 @@ while [ -n "$1" ]
   do
   case $1 in
       "-help"|"-h"|"-?")
-          usage
+          usage help
           ;;
       "-dbg")
           START="-s sherk go"
@@ -40,15 +41,34 @@ while [ -n "$1" ]
       "-nocookie")
           cookie=""
           ;;
+      "-shell")
+          NODES=$(epmd -names | grep "at port" | cut -f2 -d" ")
+          case $(echo $NODES | wc -w) in
+              0)
+                  usage "no nodes"
+                  ;;
+              1)
+                  REM_NAME="$NODES@"$(echo $HOSTNAME | cut -f1 -d".")
+                  shell="true"
+                  echo connectiong to $REM_NAME
+                  ;;
+              *)
+                  usage "multiple nodes: $NODES"
+          esac
+          ;;
       *)
-          usage
+          usage "unknown flag:$1"
           ;;
   esac
   shift
 done
 
-name="sherk_"$$
-FLAGS="$detach -boot start_sasl -sasl errlog_type error +A16"
-DISTR="-hidden -sname $name $cookie $nettick"
-
-erl $VSN $FLAGS $DISTR -pa $EBIN -pa $DEPS/*/ebin $START
+if [ -n "$shell" ]; then
+    DISTR="-sname $$ $cookie $nettick"
+    erl $VSN $DISTR -remsh $REM_NAME
+else
+    name="sherk_"$$
+    FLAGS="$detach -boot start_sasl -sasl errlog_type error +A16"
+    DISTR="-sname $name $cookie $nettick"
+    erl $VSN $FLAGS $DISTR -pa $EBIN -pa $DEPS/*/ebin $START
+fi
