@@ -313,10 +313,8 @@ funi(Fun) ->
           {rpc}
       end;
     {_,Mod} ->
-      case erlang:fun_info(Fun,pid) of
-        {_,Pid} when is_pid(Pid) -> {'fun',{Mod,node(Pid)}};
-        {_,X} -> {'fun',{Mod,X}}
-      end
+      {new_index,Idx} = erlang:fun_info(Fun,new_index),
+      {'fun',{Mod,Idx}}
   end.
 
 trans_init(gen,init_it,[gen_server,_,_,supervisor,{_,Module,_},_]) ->
