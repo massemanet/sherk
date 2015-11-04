@@ -20,9 +20,10 @@ init() ->
   receive
     {init,LD} ->
       Proxy = dict:fetch(proxy,LD),
-      spawn(Proxy,fun sherk_proxy:init/0),
+      ProxyPid = spawn(Proxy,fun sherk_proxy:init/0),
+      ProxyPid ! {init,LD},
       {file,Dir} = dict:fetch(dest,LD),
-      recv(Proxy,Dir,dict:new())
+      recv(ProxyPid,Dir,dict:new())
   end.
 
 recv(Proxy,Dir,FDs) ->
