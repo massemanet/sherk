@@ -14,6 +14,7 @@
 %%% the proxy process
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 init() ->
+  ?log({initing}),
   sherk_target:self_register(sherk_proxy),
   process_flag(trap_exit,true),
   receive
@@ -31,8 +32,10 @@ loop(LD) ->
       ?log({timed_out}),
       stop(LD);
     stop ->
+      ?log({stopping}),
       stop(LD);
     {info,P,D} ->
+      ?log({infoed}),
       I = [{K,V}||{K,V}<-dict:to_list(D),lists:member(K,[procs,flags,time])],
       ?log([{target,node(P)},{info,I}]),
       loop(LD);
