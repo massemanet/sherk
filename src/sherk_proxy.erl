@@ -14,7 +14,7 @@
 %%% the proxy process
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 init() ->
-  sherk_target:self_register(sherk_host),
+  sherk_target:self_register(sherk_proxy),
   process_flag(trap_exit,true),
   receive
     {init,LD} ->
@@ -40,52 +40,33 @@ loop(LD) ->
       ?log([got_exit,{from,node(P)},{reason,R}]),
       case dict:fetch(pids,LD) of
         [P] -> ?log(all_clients_dead);
-        Ps -> loop(dict:store(pids,Ps--[P],LD))
+        Ps ->
+          case lists:member(P,Ps) of
+            true -> loop(dict:store(pids,Ps--[P],LD));
+            false->
+              ?log({weird_exit,node(P)}),
+              exit({got_weird_exit,node(P)})
+          end
       end
   end.
 
 stop(LD) ->
   Pids = dict:fetch(pids,LD),
   [P ! stop || P <- Pids],
-  recv(Pids,dict:fetch(dest,LD),dict:new()).
+  recv(Pids,dict:fetch(daddy,LD)).
 
-recv(_,{ip,_},_) -> ok;
-recv(Pids,{file,Dir},FDs) -> recv(Pids,Dir,FDs);
-recv([],_,FDs) ->
-  case dict:fold(fun(P,_,A)->[node(P)|A] end,[],FDs) of
-    [] -> ok;
-    X -> ?log({fds_still_open,X})
-  end;
-recv(Pids,Dir,FDs) ->
+recv({ip,_},_) -> ok;  % not yet implemented
+recv(Pids,Daddy) ->
   receive
-    {'EXIT',P,R}                  -> recv(bye(P,R,Pids),Dir,close(P,FDs));
-    {P,chunk,eof}                 -> recv(bye(P,eof,Pids),Dir,close(P,FDs));
-    {P,chunk,{error,R}}           -> recv(bye(P,R,Pids),Dir,close(P,FDs));
-    {P,chunk,B} when is_binary(B) -> recv(Pids,Dir,stuff(P,B,Dir,FDs))
-  end.
-
-stuff(P,B,Dir,FDs) ->
-  case dict:find(P,FDs) of
-    {ok,FD} ->
-      file:write(FD,B),
-      FDs;
-    error ->
-      File = filename:join(Dir,atom_to_list(node(P)))++".trz",
-      filelib:ensure_dir(File),
-      {ok,FD} = file:open(File,[raw,write,compressed]),
-      ?log({opened,File}),
-      stuff(P,B,Dir,dict:store(P,FD,FDs))
-  end.
-
-close(P,FDs) ->
-  try
-    FD = dict:fetch(P,FDs),
-    file:close(FD),
-    dict:erase(P,FDs)
-  catch
-    _:_ -> FDs
+    {'EXIT',P,R}        -> recv(bye(P,R,Pids),Daddy);
+    {P,chunk,eof}       -> recv(bye(P,eof,Pids),Daddy);
+    {P,chunk,{error,R}} -> recv(bye(P,R,Pids),Daddy);
+    {P,chunk,B}         -> Daddy ! {P,B},recv(Pids,Daddy)
   end.
 
 bye(P,R,Pids) ->
   ?log([{client_finished,node(P)},{reason,R}]),
-  Pids--[P].
+  case [P] of
+    Pids -> exit(done);
+    Pid  -> Pids--Pid
+  end.

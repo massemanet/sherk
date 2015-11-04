@@ -56,9 +56,10 @@ check_and_spawn(Time,Flavor,Procs,Targs,Dest,Proxy) ->
           {procs ,chk_procs(Procs)},
           {dest  ,chk_dest(Dest)},
           {targs ,chk_targs(Targs)},
+          {proxy ,Proxy},
           {daddy ,self()}]),
 
-  Pid = spawn(Proxy,fun sherk_proxy:init/0),
+  Pid = spawn(fun sherk_host:init/0),
   Pid ! {init,LD},
   Pid.
 
