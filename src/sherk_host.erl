@@ -23,7 +23,7 @@ init() ->
       Proxy = dict:fetch(proxy,LD),
       ?log({spawning}),
       ProxyPid = spawn_link(Proxy,fun sherk_proxy:init/0),
-      ProxyPid ! {init,LD},
+      ProxyPid ! {init,dict:store(daddy,self(),LD)},
       {file,Dir} = dict:fetch(dest,LD),
       recv(ProxyPid,Dir,dict:new())
   end.
