@@ -181,19 +181,21 @@ aq_go(LD) ->
   g('Gtk_widget_set_sensitive',[aq_treeview,false]),
   g('Gtk_widget_set_sensitive',[aq_go_button,false]),
   g('Gtk_widget_set_sensitive',[aq_stop_button,true]),
-  Time = aq_get_time(),
-  Targs = aq_get_nodes(),
+  Time   = aq_get_time(),
+  Targs  = aq_get_nodes(),
   Flavor = aq_get_flavor(),
-  Dest = {file,aq_get_dest()},
+  Dest   = {file,aq_get_dest()},
+  Proxy  = dict:fetch(proxy,LD),
   ?log([{time,Time},
         {flavor,Flavor},
         {targs,Targs},
         {dest,Dest}]),
-  P = sherk_aquire:go(Time,Flavor,Targs,Dest),
-  dict:store(aq_mon,erlang:monitor(process,P),LD).
+  P = sherk_aquire:go(Time,Flavor,Targs,Dest,Proxy),
+  dict:store(aq_mon,erlang:monitor(process,P),
+             dict:store(aq_proxy_pid,P,LD)).
 
 aq_stop(LD) ->
-  sherk_aquire:stop(),
+  sherk_aquire:stop(dict:fetch(aq_proxy_pid,LD)),
   do_aq_stop(LD,aq_stop_wait(dict:fetch(aq_mon,LD))).
 
 aq_stop_wait(Monitor) ->
