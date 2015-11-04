@@ -55,11 +55,13 @@ loop(LD) ->
 
 stop(LD) ->
   Pids = dict:fetch(pids,LD),
+  ?log({stopping,Pids}),
   [P ! stop || P <- Pids],
   recv(Pids,dict:fetch(daddy,LD)).
 
 recv({ip,_},_) -> ok;  % not yet implemented
 recv(Pids,Daddy) ->
+  ?log({receiving,Daddy}),
   receive
     {'EXIT',P,R}        -> recv(bye(P,R,Pids),Daddy);
     {P,chunk,eof}       -> recv(bye(P,eof,Pids),Daddy);
