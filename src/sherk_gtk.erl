@@ -294,10 +294,14 @@ new_target(Node,LD) ->
   end.
 
 new_target(Node,Ts,LD) ->
-  try erlang:set_cookie(Node,dict:fetch(cookie,LD))
-  catch _:_ -> ok
+  case dict:fetch(proxy,LD) =:= node() of
+    false-> ok;  % proxy should alarm if target goes down
+    true ->
+      try erlang:set_cookie(Node,dict:fetch(cookie,LD))
+      catch _:_ -> ok
+      end,
+      erlang:monitor_node(Node,true)
   end,
-  erlang:monitor_node(Node,true),
   update_targs([Node|Ts], LD).
 
 wierd(UpDown,Node,Ts,BTs) ->
