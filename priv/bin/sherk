@@ -42,7 +42,7 @@ while [ -n "$1" ]
           cookie=""
           ;;
       "-shell")
-          NODES=$(epmd -names | grep "at port" | cut -f2 -d" ")
+          NODES=$(epmd -names | grep "at port" | cut -f2 -d" " | grep sherk_)
           case $(echo $NODES | wc -w) in
               0)
                   usage "no nodes"
