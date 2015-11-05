@@ -1,9 +1,134 @@
-commit 5d4aa34180f82939a82367c787b2a13fdc9d03e9
+commit 2a65bb8202bdb68f3125ac9791af2289db89435a
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Thu Nov 5 12:36:41 2015 +0100
+
+    v1.1.0
+
+src/sherk.app.src
+
+commit 6aed1a5985cc60c4db1cf62c02488318e33c3a50
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Thu Nov 5 12:36:18 2015 +0100
+
+    fix dialyzer warnings
+
+Makefile
+src/sherk_aquire.erl
+src/sherk_gtk.erl
+src/sherk_proxy.erl
+src/sherk_scan.erl
+
+commit 06492282ca64c02ab25fd8889f6f4f09f05749eb
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Thu Nov 5 11:52:31 2015 +0100
+
+    more logging
+
+src/sherk_host.erl
+src/sherk_proxy.erl
+
+commit 046b241f34df2b3ea8a5e5c34b7d94d4194f91b7
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Nov 4 23:14:28 2015 +0100
+
+    fixx wrong parent pid
+
+src/sherk_host.erl
+
+commit 266ab39f813d96b5a4a17756de667ac5b85c09d7
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Nov 4 23:10:26 2015 +0100
+
+    spawn_link...
+
+src/sherk_host.erl
+src/sherk_proxy.erl
+
+commit a6336e3bdf80ad84f36d24b52bca59ebdf6da684
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Nov 4 23:00:31 2015 +0100
+
+    add more logging
+
+src/sherk_host.erl
+src/sherk_proxy.erl
+
+commit 5bdd90e5612d2a1930628e08850c3b9cf01d35f9
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Nov 4 20:25:26 2015 +0100
+
+    typo
+
+src/sherk_host.erl
+
+commit 3dcc27ce4f48b76512c2eeb63f1d9f5188eff300
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Nov 4 20:09:20 2015 +0100
+
+    fix proxy->host file transfer
+
+src/sherk_aquire.erl
+src/sherk_host.erl
+src/sherk_proxy.erl
+
+commit f95b00f261362d50d56e604163bd6867945b5e29
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Nov 4 16:32:18 2015 +0100
+
+    make proxying work again
+
+src/sherk_aquire.erl
+src/sherk_gtk.erl
+src/sherk_proxy.erl
+
+commit 46df3119322b44d2ca091b302d7351f8bf9f661e
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Nov 4 15:46:18 2015 +0100
+
+    filter nodes for -shell
+
+priv/bin/sherk
+
+commit 5435eae5d9c40a0f235fafaa159f3f85254e3a9a
+Author: mats cronqvist <masse@klarna.com>
+Date:   Wed Nov 4 12:47:32 2015 +0100
+
+    don't set monitor on proxied targets
+
+src/sherk_gtk.erl
+
+commit 0ef5b603d678afe4098b726afc855066dc727da2
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Tue Nov 3 16:02:21 2015 +0100
+
+    fun_info uses new_index instead of pid
+
+src/sherk_scan.erl
+
+commit 910b768f53cb14257e3e8f539f6c285eda84a99f
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Tue Nov 3 16:01:57 2015 +0100
+
+    millisecond timestamps
+
+src/sherk_prof.erl
+src/sherk_scan.erl
+
+commit 86f4760426c1e1fbc2f6c333f1784450b9b66125
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Tue Nov 3 16:01:16 2015 +0100
+
+    add -shell flag to start script
+
+priv/bin/sherk
+
+commit 6b8a311bff52be5ee19e4196860d3fc37f78f923
 Author: mats cronqvist <masse@klarna.com>
 Date:   Mon Nov 2 15:44:11 2015 +0100
 
     v1.0.1
 
+ChangeLog
 src/sherk.app.src
 
 commit 70a023e7de09b656f2dad6f7ba55865dbc08db08
