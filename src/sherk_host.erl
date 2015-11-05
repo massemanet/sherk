@@ -7,9 +7,14 @@
 -module('sherk_host').
 -author('mats cronqvist').
 
--export([init/0]).
+-export([init/0,
+         ping/2]).
 
 -include("log.hrl").
+
+ping(Proxy,Targ) ->
+  sherk_netload:assert(Proxy,[sherk_proxy]),
+  rpc:call(Proxy,sherk_proxy,ping,[Targ]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% the proxy process

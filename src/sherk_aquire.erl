@@ -54,7 +54,7 @@ check_and_spawn(Time,Flavor,Procs,Targs,Dest,Proxy) ->
           {rtps  ,rtps(Flavor)},
           {procs ,chk_procs(Procs)},
           {dest  ,chk_dest(Dest)},
-          {targs ,chk_targs(Targs)},
+          {targs ,chk_targs(Proxy,Targs)},
           {proxy ,Proxy},
           {daddy ,self()}]),
 
@@ -72,12 +72,11 @@ flags(call) -> [call,return_to,arity|flags(proc)].
 rtps(call) -> [{{'_','_','_'},[],[local]}];
 rtps(proc) -> [].
 
-chk_targs(Targs) ->
-  lists:map(fun(T)->chk_conn(T) end,Targs).
+chk_targs(Proxy,Targs) ->
+  lists:map(fun(T)->chk_conn(Proxy,T) end,Targs).
 
-chk_conn(T) when T==node() -> T;
-chk_conn(T) ->
-  case net_adm:ping(T) of
+chk_conn(Proxy,T) ->
+  case sherk_host:ping(Proxy,T) of
     pong -> T;
     pang -> exit({connection_failed,T})
   end.

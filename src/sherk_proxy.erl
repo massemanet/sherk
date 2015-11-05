@@ -6,10 +6,32 @@
 
 -module('sherk_proxy').
 -author('masse').
--export([init/0]).
--export([get_target_nodes/0]).
+-export([init/0,
+         get_target_nodes/0,
+         ping/1]).
 
 -include("log.hrl").
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+get_target_nodes() ->
+  exit(get_targets(get_hosts())).
+
+get_targets(HostNodes) when is_list(HostNodes) ->
+  lists:flatten([get_targets(HostNode) || HostNode <- HostNodes]);
+get_targets({_,Node}) ->
+  sherk_netload:assert(Node,sherk_target),
+  [N || {_,N} <- rpc:call(Node,sherk_target,get_nodes,[])].
+
+% we want one erlang node per host
+get_hosts() ->
+  lists:foldl(fun one_node_per_host/2, [], sherk_target:get_nodes()).
+
+one_node_per_host({Host,_},[{Host,Node}|R]) -> [{Host,Node}|R];
+one_node_per_host(H,T) -> [H|T].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ping(T) ->
+  net_adm:ping(T).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% the proxy process
@@ -72,21 +94,3 @@ bye(P,R,Pids,N) ->
     Pids -> exit({done,N});
     Pid  -> Pids--Pid
   end.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-get_target_nodes() ->
-  exit(get_targets(get_hosts())).
-
-get_targets(HostNodes) when is_list(HostNodes) ->
-  lists:flatten([get_targets(HostNode) || HostNode <- HostNodes]);
-get_targets({_,Node}) ->
-  sherk_netload:assert(Node,sherk_target),
-  [N || {_,N} <- rpc:call(Node,sherk_target,get_nodes,[])].
-
-% we want one erlang node per host
-get_hosts() ->
-  lists:foldl(fun one_node_per_host/2, [], sherk_target:get_nodes()).
-
-one_node_per_host({Host,_},[{Host,Node}|R]) -> [{Host,Node}|R];
-one_node_per_host(H,T) -> [H|T].
