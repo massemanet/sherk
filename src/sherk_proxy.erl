@@ -14,7 +14,6 @@
 %%% the proxy process
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 init() ->
-  ?log({initing}),
   sherk_target:self_register(sherk_proxy),
   process_flag(trap_exit,true),
   receive
@@ -32,10 +31,8 @@ loop(LD) ->
       ?log({timed_out}),
       stop(LD);
     stop ->
-      ?log({stopping}),
       stop(LD);
     {info,P,D} ->
-      ?log({infoed}),
       I = [{K,V}||{K,V}<-dict:to_list(D),lists:member(K,[procs,flags,time])],
       ?log([{target,node(P)},{info,I}]),
       loop(LD);
@@ -55,23 +52,22 @@ loop(LD) ->
 
 stop(LD) ->
   Pids = dict:fetch(pids,LD),
-  ?log({stopping,Pids}),
+  ?log({stopping,[node(P) || P <- Pids]}),
   [P ! stop || P <- Pids],
-  recv(Pids,dict:fetch(daddy,LD)).
+  recv(Pids,dict:fetch(daddy,LD),0).
 
-recv({ip,_},_) -> ok;  % not yet implemented
-recv(Pids,Daddy) ->
-  ?log({receiving,Daddy}),
+recv({ip,_},_,_) -> ok;  % not yet implemented
+recv(Pids,Daddy,N) ->
   receive
-    {'EXIT',P,R}        -> recv(bye(P,R,Pids),Daddy);
-    {P,chunk,eof}       -> recv(bye(P,eof,Pids),Daddy);
-    {P,chunk,{error,R}} -> recv(bye(P,R,Pids),Daddy);
-    {P,chunk,B}         -> Daddy ! {P,B},recv(Pids,Daddy)
+    {'EXIT',P,R}        -> recv(bye(P,R,Pids,N),Daddy,N);
+    {P,chunk,eof}       -> recv(bye(P,eof,Pids,N),Daddy,N);
+    {P,chunk,{error,R}} -> recv(bye(P,R,Pids,N),Daddy,N);
+    {P,chunk,B}         -> Daddy ! {P,B},recv(Pids,Daddy,N+1)
   end.
 
-bye(P,R,Pids) ->
+bye(P,R,Pids,N) ->
   ?log([{client_finished,node(P)},{reason,R}]),
   case [P] of
-    Pids -> exit(done);
+    Pids -> exit({done,N});
     Pid  -> Pids--Pid
   end.

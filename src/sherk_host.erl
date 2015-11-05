@@ -15,28 +15,25 @@
 %%% the proxy process
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 init() ->
-  ?log({initing}),
   sherk_target:self_register(sherk_host),
   process_flag(trap_exit,true),
   receive
     {init,LD} ->
       Proxy = dict:fetch(proxy,LD),
-      ?log({spawning}),
       ProxyPid = spawn_link(Proxy,fun sherk_proxy:init/0),
       ProxyPid ! {init,dict:store(daddy,self(),LD)},
       {file,Dir} = dict:fetch(dest,LD),
-      recv(ProxyPid,Dir,dict:new())
+      recv(ProxyPid,Dir,dict:new(),0)
   end.
 
-recv(Proxy,Dir,FDs) ->
+recv(Proxy,Dir,FDs,N) ->
   receive
-    {'EXIT',Proxy,done} -> ?log({quitting,done});
-    {Pid,Chunk}         -> recv(Proxy,Dir,stuff(Pid,Chunk,Dir,FDs));
-    X                   -> ?log({weird_msg,X})
+    {'EXIT',Proxy,R} -> ?log({quitting,N,R});
+    {Pid,Chunk}      -> recv(Proxy,Dir,stuff(Pid,Chunk,Dir,FDs),N+1);
+    X                -> ?log({weird_msg,X})
   end.
 
 stuff(Pid,Chunk,Dir,FDs) ->
-  ?log({chunking,node(Pid)}),
   case dict:find(Pid,FDs) of
     {ok,FD} ->
       file:write(FD,Chunk),
