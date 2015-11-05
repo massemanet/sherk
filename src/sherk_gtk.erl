@@ -256,23 +256,17 @@ re_query_targs(LD) ->
   dict:store(targ_mon,query_targs(dict:fetch(proxy,LD)),LD).
 
 query_targs(Proxy) ->
-  sherk_aquire:ass_loaded(Proxy,sherk_target),
-  erlang:monitor(process,spawn(Proxy,sherk_target,get_nodes,[])).
+  erlang:monitor(process,spawn(Proxy,fun sherk_proxy:get_target_nodes/0)).
 
 chk_targs(LD,Atom) when is_atom(Atom) -> ?log({no_proxy,Atom}),LD;
-chk_targs(LD,{Pid,Nodes,EpmdStr}) when is_pid(Pid) ->
+chk_targs(LD,Targs) ->
   try
     erlang:start_timer(5000,self(),re_query),
     OldTargs = dict:fetch(targs,LD),
     BadTargs = dict:fetch(bad_targs,LD),
-    [_,Host] = string:tokens(sherk:to_str(node(Pid)),"@"),
-    Nods = string:tokens(EpmdStr,"\n"),
-    CPs = [N || ["name",N|_] <- [string:tokens(Str," ") || Str <- Nods]],
-    EpmdTargs = [list_to_atom(CP++"@"++Host) || CP <-CPs],
-    Targs = lists:usort(Nodes++EpmdTargs)--[node()],
     lists:foldl(fun new_target/2, LD, (Targs--OldTargs)--BadTargs)
   catch
-    _:R -> ?log([{r,R},{pid,Pid},{nodes,Nodes},{epmd,EpmdStr}]),LD
+    _:R -> ?log([{r,R},{epmd,Targs}]),LD
   end.
 
 downed_target(Node,LD) ->

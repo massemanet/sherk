@@ -207,6 +207,12 @@ send2port(Port, Term) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 get_nodes() ->
   case filelib:wildcard(filename:join([code:root_dir(),'erts*',bin,epmd])) of
-    [Epmd|_] -> exit({self(),nodes(),os:cmd(Epmd++" -names")});
-    [] -> exit({self(),nodes(),""})
+    [Epmd|_] -> parse_epmd(os:cmd(Epmd++" -names"));
+    []       -> []
   end.
+
+parse_epmd(EpmdStr) ->
+  [_,Host] = string:tokens(atom_to_list(node()),"@"),
+  Lines = string:tokens(EpmdStr,"\n"),
+  CPs = [N || ["name",N|_] <- [string:tokens(Line," ") || Line <- Lines]],
+  [{list_to_atom(Host),list_to_atom(CP++"@"++Host)} || CP <-CPs].
