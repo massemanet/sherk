@@ -68,7 +68,7 @@ getv(K,PL,Def) ->
 file_action(S) ->
   file_action(make_chunk(S#state.fd,<<>>),S).
 
--spec file_action(eof | {any(),binary()}) -> #state{}.
+-spec file_action(eof | {any(),binary()},#state{}) -> #state{}.
 file_action(eof,S) ->
   do(eof,S);
 file_action({Term,Rest},S) ->

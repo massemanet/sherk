@@ -190,7 +190,7 @@ aq_go(LD) ->
         {flavor,Flavor},
         {targs,Targs},
         {dest,Dest}]),
-  P = sherk_aquire:go(Time,Flavor,Targs,Dest,Proxy),
+  P = sherk_aquire:go(Time,Dest,Flavor,Targs,Proxy),
   dict:store(aq_mon,erlang:monitor(process,P),
              dict:store(aq_proxy_pid,P,LD)).
 

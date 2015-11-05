@@ -56,7 +56,6 @@ stop(LD) ->
   [P ! stop || P <- Pids],
   recv(Pids,dict:fetch(daddy,LD),0).
 
-recv({ip,_},_,_) -> ok;  % not yet implemented
 recv(Pids,Daddy,N) ->
   receive
     {'EXIT',P,R}        -> recv(bye(P,R,Pids,N),Daddy,N);

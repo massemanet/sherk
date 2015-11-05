@@ -7,7 +7,7 @@
 %%%-------------------------------------------------------------------
 -module(sherk_aquire).
 
--export([go/0,go/1,go/2,go/3,go/4,go/5]).
+-export([go/0,go/1,go/2,go/3,go/4,go/5,go/6]).
 -export([stop/1]).
 -export([ass_loaded/2]).
 
@@ -26,18 +26,18 @@ go(Time) ->
   go(Time,{file,"/tmp"}).
 
 go(Time,Dest) ->
-  go(Time,call,Dest).
+  go(Time,Dest,call).
 
-go(Time,Flavor,Dest) ->
-  go(Time,Flavor,[node()],Dest).
+go(Time,Dest,Flavor) ->
+  go(Time,Dest,Flavor,[node()]).
 
-go(Time,Flavor,Targ,Dest) ->
-  go(Time,Flavor,all,Targ,Dest).
+go(Time,Dest,Flavor,Targ) ->
+  go(Time,Dest,Flavor,Targ,node()).
 
-go(Time,Flavor,Procs,Targ,Dest) ->
-  go(Time,Flavor,Procs,Targ,Dest,node()).
+go(Time,Dest,Flavor,Targ,Proxy) ->
+  go(Time,Dest,Flavor,Targ,Proxy,all).
 
-go(Time,Flavor,Procs,Targs,Dest,Proxy) ->
+go(Time,Dest,Flavor,Targs,Proxy,Procs) ->
   check_and_spawn(Time,Flavor,Procs,Targs,Dest,Proxy).
 
 stop(Pid) ->
@@ -86,9 +86,9 @@ chk_conn(T) ->
 chk_time(Time) when is_integer(Time) -> Time;
 chk_time(X) -> exit({bad_time,X}).
 
-chk_procs(X)  when all==X; existing==X; new==X -> [X];
-chk_procs(Ps) when is_list(Ps)                 -> lists:map(fun chk_proc/1, Ps);
-chk_procs(X)                                   -> exit({bad_proc_spec,X}).
+chk_procs(X)  when all==X;existing==X;new==X -> [X];
+chk_procs(Ps) when is_list(Ps)               -> lists:map(fun chk_proc/1, Ps);
+chk_procs(X)                                 -> exit({bad_proc_spec,X}).
 
 chk_proc(X)         when X==all; X==existing; X==new  -> exit({bad_proc,X});
 chk_proc(Pid)       when is_pid(Pid)                  -> Pid;

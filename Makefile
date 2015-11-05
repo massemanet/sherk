@@ -24,13 +24,13 @@ test: eunit xref dialyze
 #############################################################################
 ## release stuff
 
-release_major: test
+release_major: deps test
 	./bin/release.sh major
 
-release_minor: test
+release_minor: deps test
 	./bin/release.sh minor
 
-release_patch: test
+release_patch: deps test
 	./bin/release.sh patch
 
 release: release_patch
@@ -42,7 +42,11 @@ eunit: compile
 	@$(REBAR) eunit skip_deps=true
 
 xref: compile
-	@$(REBAR) compile xref skip_deps=true
+	@$(REBAR) xref skip_deps=true
+
+dialyze: compile ~/.dialyzer_plt deps/.dialyzer_plt
+	$(shell [ -d .eunit ] && rm -rf .eunit)
+	dialyzer ebin -nn --plt ~/.dialyzer_plt
 
 ~/.dialyzer_plt:
 	-dialyzer --output_plt ${@} --build_plt \
@@ -50,9 +54,5 @@ xref: compile
                   eunit xmerl compiler runtime_tools mnesia syntax_tools
 
 deps/.dialyzer_plt: ~/.dialyzer_plt
-	-dialyzer -nn --no_spec \
+	-dialyzer -nn \
           --add_to_plt --plt ~/.dialyzer_plt --output_plt ${@} -r deps
-
-dialyze: deps/.dialyzer_plt
-	$(shell [ -d .eunit ] && rm -rf .eunit)
-	dialyzer ebin -nn --no_spec --plt deps/.dialyzer_plt
