@@ -20,6 +20,7 @@ init() ->
   receive
     {init,LD} ->
       Proxy = dict:fetch(proxy,LD),
+      sherk_netload:assert(Proxy,[sherk_target,sherk_netload,sherk_proxy]),
       ProxyPid = spawn_link(Proxy,fun sherk_proxy:init/0),
       ProxyPid ! {init,dict:store(daddy,self(),LD)},
       {file,Dir} = dict:fetch(dest,LD),

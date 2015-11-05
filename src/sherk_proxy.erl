@@ -19,6 +19,7 @@ init() ->
   receive
     {init,LD} ->
       Targs = dict:fetch(targs,LD),
+      sherk_netload:assert(Targs,sherk_target),
       Pids = [spawn_link(T, fun sherk_target:init/0) || T <- Targs],
       [ P ! {init,dict:store(daddy,self(),LD)} || P <- Pids],
       Timer = erlang:start_timer(dict:fetch(time,LD),self(),{die}),

@@ -9,7 +9,6 @@
 
 -export([go/0,go/1,go/2,go/3,go/4,go/5,go/6]).
 -export([stop/1]).
--export([ass_loaded/2]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% the API
@@ -79,7 +78,7 @@ chk_targs(Targs) ->
 chk_conn(T) when T==node() -> T;
 chk_conn(T) ->
   case net_adm:ping(T) of
-    pong -> ass_loaded(T,sherk_target);
+    pong -> T;
     pang -> exit({connection_failed,T})
   end.
 
@@ -99,36 +98,3 @@ chk_proc(X)                                           -> exit({bad_proc,X}).
 chk_dest({ip,Port})  when is_integer(Port) -> {ip,Port};
 chk_dest({file,Dir}) when $/==hd(Dir)      -> {file,Dir};
 chk_dest(X)                                -> exit({bad_dest,X}).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-ass_loaded(Node, Mod) ->
-  case rpc:call(Node,Mod,module_info,[compile]) of
-    {badrpc,{'EXIT',{undef,_}}} ->          %no code
-      netload(Node, Mod),
-      ass_loaded(Node, Mod);
-    {badrpc,_} ->
-      exit({no_connection,Node});
-    CompInfo when is_list(CompInfo) ->
-      case {ftime(CompInfo), ftime(Mod:module_info(compile))} of
-        {interpreted,_} ->
-          exit({target_has_interpreted_code,Mod});
-        {TargT, HostT} when TargT < HostT -> %old code on target
-          netload(Node, Mod),
-          ass_loaded(Node, Mod);
-        _ ->
-          Node
-      end
-  end.
-
-netload(Node, Mod) ->
-  {Mod, Bin, Fname} = code:get_object_code(Mod),
-  case rpc:call(Node, code, load_binary, [Mod, Fname, Bin]) of
-    {module, Mod} -> ok;
-    {error,badfile} ->
-      I = (catch rpc:call(Node, erlang, system_info, [otp_release])),
-      exit({target_emulator_too_old,Node,I})
-  end.
-
-ftime([]) -> interpreted;
-ftime([{time,T}|_]) -> T;
-ftime([_|T]) -> ftime(T).
