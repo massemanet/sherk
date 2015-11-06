@@ -1,9 +1,49 @@
-commit 2a65bb8202bdb68f3125ac9791af2289db89435a
+commit bbfd4295a49451a3fb69cfc0ebbc14219e34819e
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Fri Nov 6 08:17:33 2015 +0100
+
+    v1.1.1
+
+src/sherk.app.src
+
+commit 67ac10e2133e3d2b262a75479a6658d0bcb184eb
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Thu Nov 5 19:22:39 2015 +0100
+
+    ping targets through proxy
+
+src/sherk_aquire.erl
+src/sherk_host.erl
+src/sherk_proxy.erl
+
+commit 190605b5653d0e01d03988c877f983d9a27e54b2
+Author: mats cronqvist <masse@klarna.com>
+Date:   Thu Nov 5 16:36:44 2015 +0100
+
+    get targets from all hosts visible from the proxy
+
+src/sherk_gtk.erl
+src/sherk_proxy.erl
+src/sherk_target.erl
+
+commit 03331e339509060937f0b4b231da92f3cb4fd548
+Author: mats cronqvist <masse@klarna.com>
+Date:   Thu Nov 5 15:39:29 2015 +0100
+
+    break out netload code
+
+src/sherk_aquire.erl
+src/sherk_host.erl
+src/sherk_netload.erl
+src/sherk_proxy.erl
+
+commit 1862a942e0bec16a691347673f74de570bb1cfb1
 Author: mats cronqvist <masse@cronqvi.st>
 Date:   Thu Nov 5 12:36:41 2015 +0100
 
     v1.1.0
 
+ChangeLog
 src/sherk.app.src
 
 commit 6aed1a5985cc60c4db1cf62c02488318e33c3a50
