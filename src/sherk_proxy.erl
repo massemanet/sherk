@@ -7,19 +7,21 @@
 -module('sherk_proxy').
 -author('masse').
 -export([init/0,
-         get_target_nodes/0,
+         get_target_nodes/1,
          ping/1]).
 
 -include("log.hrl").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-get_target_nodes() ->
-  exit(get_targets(get_hosts())).
+%% called from sherk_host
 
-get_targets(HostNodes) when is_list(HostNodes) ->
-  lists:flatten([get_targets(HostNode) || HostNode <- HostNodes]);
-get_targets({_,Node}) ->
-  sherk_netload:assert(Node,sherk_target),
+get_target_nodes(TargetBeamCode) ->
+  get_targets(get_hosts(),TargetBeamCode).
+
+get_targets(HostNodes,TargetBeamCode) when is_list(HostNodes) ->
+  lists:flatten([get_targets(Host,TargetBeamCode) || Host <- HostNodes]);
+get_targets({_,Node},TargetBeamCode) ->
+  sherk_netload:assert(Node,TargetBeamCode),
   [N || {_,N} <- rpc:call(Node,sherk_target,get_nodes,[])].
 
 % we want one erlang node per host
@@ -30,6 +32,7 @@ one_node_per_host({Host,_},[{Host,Node}|R]) -> [{Host,Node}|R];
 one_node_per_host(H,T) -> [H|T].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% called from sherk_host
 ping(T) ->
   net_adm:ping(T).
 
@@ -42,7 +45,7 @@ init() ->
   receive
     {init,LD} ->
       Targs = dict:fetch(targs,LD),
-      sherk_netload:assert(Targs,sherk_target),
+      sherk_netload:assert(Targs,dict:fetch(target_beam_code,LD)),
       Pids = [spawn_link(T, fun sherk_target:init/0) || T <- Targs],
       [ P ! {init,dict:store(daddy,self(),LD)} || P <- Pids],
       Timer = erlang:start_timer(dict:fetch(time,LD),self(),{die}),

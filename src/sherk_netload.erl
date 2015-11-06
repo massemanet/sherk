@@ -8,12 +8,16 @@
 -author('masse').
 -export([assert/2]).
 
-assert(Node,Mods) when is_atom(Node) -> assert([Node],Mods);
-assert(Nodes,Mod) when is_atom(Mod)  -> assert(Nodes,[Mod]);
+assert(Node,Mods) when is_atom(Node)  -> assert([Node],Mods);
+assert(Nodes,Mod) when is_atom(Mod)   -> assert(Nodes,[Mod]);
+assert(Nodes,Bin) when is_binary(Bin) -> assert(Nodes,[Bin]);
 assert(Nodes,Mods) ->
   [assrt(Node,Mod) || Node <- Nodes, Mod <- Mods].
 
-assrt(Node,Mod) ->
+assrt(Node,Bin) when is_binary(Bin) ->
+  {ok,{Mod,[{"CInf",_}]}} = beam_lib:chunks(Bin,["CInf"]),
+  netload(Node,Mod,Bin);
+assrt(Node,Mod) when is_atom(Mod) ->
   case rpc:call(Node,Mod,module_info,[compile]) of
     {badrpc,{'EXIT',{undef,_}}} ->          %no code
       netload(Node,Mod),
@@ -33,8 +37,11 @@ assrt(Node,Mod) ->
   end.
 
 netload(Node,Mod) ->
-  {Mod,Bin,Fname} = code:get_object_code(Mod),
-  case rpc:call(Node,code,load_binary,[Mod,Fname,Bin]) of
+  {Mod,Bin,_} = code:get_object_code(Mod),
+  netload(Node,Mod,Bin).
+
+netload(Node,Mod,Bin) ->
+  case rpc:call(Node,code,load_binary,[Mod,"netloaded",Bin]) of
     {module,Mod} -> ok;
     {error,badfile} ->
       I = (catch rpc:call(Node,erlang,system_info,[otp_release])),

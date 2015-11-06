@@ -8,9 +8,15 @@
 -author('mats cronqvist').
 
 -export([init/0,
+         get_target_nodes/1,
          ping/2]).
 
 -include("log.hrl").
+
+get_target_nodes(Proxy) ->
+  sherk_netload:assert(Proxy,[sherk_proxy,sherk_netload]),
+  {_,TargetBeamCode,_} = code:get_object_code(sherk_target),
+  exit(rpc:call(Proxy,sherk_proxy,get_target_nodes,[TargetBeamCode])).
 
 ping(Proxy,Targ) ->
   sherk_netload:assert(Proxy,[sherk_proxy]),
@@ -25,9 +31,12 @@ init() ->
   receive
     {init,LD} ->
       Proxy = dict:fetch(proxy,LD),
+      {_,TargetBeamCode,_} = code:get_object_code(sherk_target),
       sherk_netload:assert(Proxy,[sherk_target,sherk_netload,sherk_proxy]),
       ProxyPid = spawn_link(Proxy,fun sherk_proxy:init/0),
-      ProxyPid ! {init,dict:store(daddy,self(),LD)},
+      ProxyPid ! {init,
+                  dict:store(target_beam_code,TargetBeamCode,
+                             dict:store(daddy,self(),LD))},
       {file,Dir} = dict:fetch(dest,LD),
       recv(ProxyPid,Dir,dict:new(),0)
   end.
