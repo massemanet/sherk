@@ -46,7 +46,7 @@ xref: compile
 
 dialyze: compile ~/.dialyzer_plt deps/.dialyzer_plt
 	$(shell [ -d .eunit ] && rm -rf .eunit)
-	dialyzer ebin -nn --plt ~/.dialyzer_plt
+	dialyzer ebin -nn -Wno_return --plt deps/.dialyzer_plt
 
 ~/.dialyzer_plt:
 	-dialyzer --output_plt ${@} --build_plt \

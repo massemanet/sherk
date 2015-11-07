@@ -256,8 +256,10 @@ re_query_targs(LD) ->
   dict:store(targ_mon,query_targs(dict:fetch(proxy,LD)),LD).
 
 query_targs(Proxy) ->
-  Querier = fun() -> sherk_host:get_target_nodes(Proxy) end,
-  erlang:monitor(process,spawn(Querier)).
+  erlang:monitor(process,spawn(mk_querier(Proxy))).
+
+mk_querier(Proxy) ->
+  fun() -> sherk_host:get_target_nodes(Proxy) end.
 
 chk_targs(LD,Atom) when is_atom(Atom) -> ?log({no_proxy,Atom}),LD;
 chk_targs(LD,Targs) ->
