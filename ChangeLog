@@ -1,9 +1,47 @@
-commit bbfd4295a49451a3fb69cfc0ebbc14219e34819e
+commit 7e0f767a9be1b6fc8d4a9f9cb3585691ecdc2a58
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Sat Nov 7 11:27:18 2015 +0100
+
+    v1.1.2
+
+src/sherk.app.src
+
+commit fbd02c62d3e9118bcf2e1aa41fa12819a8ecbdd6
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Sat Nov 7 11:26:53 2015 +0100
+
+    fix dialyzer
+
+Makefile
+src/sherk_gtk.erl
+
+commit 416329202e83a06192fc6a572501e65461fba8ed
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Sat Nov 7 11:03:32 2015 +0100
+
+    fix get_hosts
+
+src/sherk_netload.erl
+src/sherk_proxy.erl
+
+commit 2e284796b900c90333b875d901ea5c6b6c0936af
+Author: mats cronqvist <masse@klarna.com>
+Date:   Fri Nov 6 12:52:54 2015 +0100
+
+    fix netloading through proxy
+
+src/sherk_gtk.erl
+src/sherk_host.erl
+src/sherk_netload.erl
+src/sherk_proxy.erl
+
+commit b7f20b0a133fd5665afb91d81979eb3d7af6d44c
 Author: mats cronqvist <masse@cronqvi.st>
 Date:   Fri Nov 6 08:17:33 2015 +0100
 
     v1.1.1
 
+ChangeLog
 src/sherk.app.src
 
 commit 67ac10e2133e3d2b262a75479a6658d0bcb184eb
