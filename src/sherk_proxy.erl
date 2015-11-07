@@ -7,7 +7,7 @@
 -module('sherk_proxy').
 -author('masse').
 -export([init/0,
-         get_target_nodes/1,
+         get_target_nodes/0,get_target_nodes/1,
          ping/1]).
 
 -include("log.hrl").
@@ -15,21 +15,32 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% called from sherk_host
 
+get_target_nodes() ->
+  case code:get_object_code(sherk_target) of
+    {_,TargetBeamCode,_} -> get_target_nodes(TargetBeamCode);
+    Err -> exit({getting_target_beam_code,sherk_target,Err})
+  end.
+
 get_target_nodes(TargetBeamCode) ->
-  get_targets(get_hosts(),TargetBeamCode).
+  [N || {_,N} <- get_targets(sherk_target:get_nodes(),TargetBeamCode)].
 
 get_targets(HostNodes,TargetBeamCode) when is_list(HostNodes) ->
-  lists:flatten([get_targets(Host,TargetBeamCode) || Host <- HostNodes]);
+  HNs = filter_hosts(HostNodes),
+  HostNodes++lists:flatten([get_targets(HN,TargetBeamCode) || HN <- HNs]);
 get_targets({_,Node},TargetBeamCode) ->
   sherk_netload:assert(Node,TargetBeamCode),
   [N || {_,N} <- rpc:call(Node,sherk_target,get_nodes,[])].
 
 % we want one erlang node per host
-get_hosts() ->
-  lists:foldl(fun one_node_per_host/2, [], sherk_target:get_nodes()).
+filter_hosts(HostNodes) ->
+  [_,H] = string:tokens(atom_to_list(node()),"@"),
+  Host = list_to_atom(H),
+  F = fun(A,B) -> one_node_per_host(A,B,Host) end,
+  lists:foldl(F,[],HostNodes).
 
-one_node_per_host({Host,_},[{Host,Node}|R]) -> [{Host,Node}|R];
-one_node_per_host(H,T) -> [H|T].
+one_node_per_host({Host,_},R,Host)     -> R;
+one_node_per_host({H,_},[{H,_}|_]=R,_) -> R;
+one_node_per_host(HN,R,_)              -> [HN|R].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% called from sherk_host

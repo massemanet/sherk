@@ -43,11 +43,13 @@ netload(Node,Mod) ->
 netload(Node,Mod,Bin) ->
   case rpc:call(Node,code,load_binary,[Mod,"netloaded",Bin]) of
     {module,Mod} -> ok;
+    {badrpc,_} ->
+      exit({no_connection,Node});
     {error,badfile} ->
       I = (catch rpc:call(Node,erlang,system_info,[otp_release])),
       exit({target_emulator_too_old,Node,I})
   end.
 
-ftime([]) -> interpreted;
+ftime([])           -> interpreted;
 ftime([{time,T}|_]) -> T;
-ftime([_|T]) -> ftime(T).
+ftime([_|T])        -> ftime(T).
