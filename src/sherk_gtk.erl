@@ -313,10 +313,12 @@ update_targs(Ts,LD) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 procs(LD) ->
   g('Gtk_widget_set_sensitive',[go_button,false]),
+  g('Gtk_widget_set_sensitive',[main_filechoose,false]),
   File = g('Gtk_file_chooser_get_filename',[main_filechoose]),
   sherk_tab:assert(File),
   Tree = sherk_tree:go(procs),
-  update_treeview_tree(procs_treeview,Tree),
+  update_treeview_tree(procs_treeview,Tree,false),
+  g('Gtk_widget_set_sensitive',[main_filechoose,true]),
   g('Gtk_widget_set_sensitive',[go_button,true]),
   LD.
 
@@ -344,7 +346,7 @@ update_call(LD,Model,Path) ->
     false->
       init_tree_view(call_treeview,dict:fetch(call_tree,LD)),
       Tree = sherk_tree:go({callgraph,PidStr}),
-      update_treeview_tree(call_treeview,Tree)
+      update_treeview_tree(call_treeview,Tree,true)
   end,
   LD.
 
@@ -419,13 +421,17 @@ set_active_combo(Model, Path) ->
 init_tree_store(Cols)->
   g('Gtk_tree_store_newv',[length(Cols),Cols]).
 
-update_treeview_tree(View,Tree) ->
+update_treeview_tree(View,Tree,ExpandP) ->
   Model = g('Gtk_tree_view_get_model',[View]),
   hide(View),
   g('Gtk_tree_store_clear',[Model]),
   g('Gtk_widget_freeze_child_notify',[View]),
   tree_insert(Model, Tree),
   g('Gtk_widget_thaw_child_notify',[View]),
+  case ExpandP of
+    true -> g('Gtk_tree_view_expand_all',[View]);
+    false-> ok
+  end,
   show(View).
 
 tree_insert(Store,Tree) ->
