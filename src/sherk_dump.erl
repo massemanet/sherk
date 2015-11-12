@@ -27,8 +27,9 @@ handler({_,{O,_,M,T}},A) ->
 format(O,M,T,T0,T1,Acc) ->
   [{diff(T,T0),diff(T,T1),O,M}|Acc].
 
+% {Sec,uSec} -> mSec
 diff({S0,N0},{S1,N1}) ->
-  (S0-S1)*1000000+(N0-N1)/1000.
+  (S0-S1)*1000+(N0-N1)/1000.
 
 out(A)->
   FN = "foox",

@@ -235,12 +235,10 @@ mass_send(Pid,T,{Msg,{To,Node}},TS) when is_atom(To),is_atom(Node) ->
   {T,pi(Pid),{{remote,{To,Node}},Msg},TS}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% convert to {Second,NanoSecond}
-%% if we get {0,S,NS} we assume nanosec-resolution clock.
-%% otherwise now/0-style millisecond-resolution.
+%% convert to {Second,MilliSecond}
 ts() -> ts({0,0,0}).
 
-ts({0,S,NS})  -> {S,round(NS/1000)};
+ts({0,S,Ms})  -> {S,Ms};
 ts({MS,S,Ms}) -> {MS*1000000+S,Ms}.
 
 pi(file_driver) -> {trace,file_driver};
