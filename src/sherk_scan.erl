@@ -11,6 +11,7 @@
 -include_lib("kernel/include/file.hrl").
 
 -export([fold/3,fold/4]).
+-export([read_end/2]).
 
 -include("log.hrl").
 
@@ -351,3 +352,23 @@ ets_lup(Tab,Key) ->
   end.
 
 ets_del(Key) -> ets:delete(?MODULE,Key).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+read_end(FileName,Len) ->
+  {ok,FD} = file:open(FileName,[read,binary,compressed]),
+  halve(step_up(FD,0,1000),Len).
+
+step_up(FD,Low,Hi) ->
+  case file:pread(FD,Hi,1) of
+    eof    -> {FD,Low,Hi};
+    {ok,_} -> step_up(FD,Hi,10*Hi)
+  end.
+
+halve({FD,Low,Hi},Len) when Hi-Low =:= 1 -> file:pread(FD,Hi-Len,Len+10);
+halve({FD,Low,Hi},Len) ->
+  M = (Low+Hi) div 2,
+  case file:pread(FD,M,1) of
+    eof    -> halve({FD,Low,M},Len);
+    {ok,_} -> halve({FD,M,Hi},Len)
+  end.
