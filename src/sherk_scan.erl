@@ -27,7 +27,7 @@
 %%%    funs, ports, refs and pids ar turned into atoms.
 %%%  Fun - fun(Msg,Acc0) -> Acc1.
 %%%  Msg - the trace message
-%%%  Raw - boolean() - if true, trace messages are normalized to sherk form.
+%%%  Raw - boolean() - if false, trace messages are normalized to sherk form.
 %%%  Min - integer() - min sequence number
 %%%  Max - integer() - max sequence number
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
