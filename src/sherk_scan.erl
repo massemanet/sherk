@@ -195,6 +195,8 @@ is_meta(M) ->
     _        -> true
   end.
 
+mass({start_time,_})    -> [];
+mass({stop_time,_})     -> [];
 mass({port_info,Info})  -> handle_porti(Info),[];
 mass({proc_info,Info})  -> handle_proci(Info),[];
 mass({trace_info,Info}) -> handle_traci(Info),[];

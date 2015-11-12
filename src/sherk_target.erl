@@ -37,14 +37,15 @@ start(LD) ->
   start_trace(LD).
 
 start_trace(LD) ->
-  Procs  = dict:fetch(procs,LD),
-  TimeSt = timestamp(Procs),
-  Cons   = consumer(dict:fetch(dest,LD)),
-  send2port(Cons,{trace_info,dict:to_list(LD)}),
-  Flags = [{tracer,Cons},TimeSt|dict:fetch(flags,LD)],
+  Procs     = dict:fetch(procs,LD),
+  TimeStamp = timestamp(Procs),
+  Consumer  = consumer(dict:fetch(dest,LD)),
+  Flags     = [{tracer,Consumer},TimeStamp|dict:fetch(flags,LD)],
+  send2port(Consumer,{trace_info,dict:to_list(LD)}),
+  send2port(Consumer,{start_time,os:timestamp()}),
   lists:foreach(fun(P) -> erlang:trace(P,true,Flags) end,Procs),
   dict:fetch(daddy,LD) ! {info,self(),LD},
-  dict:store(consumer,Cons,LD).
+  dict:store(consumer,Consumer,LD).
 
 consumer(Dest) ->
   Port = mk_port(Dest),
@@ -80,9 +81,11 @@ cpu_timestamp_works() ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 stop_trace(LD) ->
+  Consumer = dict:fetch(consumer,LD),
   erlang:trace(all,false,dict:fetch(flags,LD)),
   unset_tps(),
-  consumer_stop(dict:fetch(consumer,LD)).
+  send2port(Consumer,{stop_time,os:timestamp()}),
+  consumer_stop(Consumer).
 
 consumer_stop(Port) -> erlang:port_close(Port).%%dbg:flush_trace_port().
 
