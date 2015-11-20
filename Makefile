@@ -49,7 +49,7 @@ dialyze: compile ~/.dialyzer_plt deps/.dialyzer_plt
 	dialyzer ebin -nn -Wno_return --plt deps/.dialyzer_plt
 
 ~/.dialyzer_plt:
-	-dialyzer --output_plt ${@} --build_plt \
+	-dialyzer -nn --output_plt ${@} --build_plt \
            --apps erts kernel stdlib crypto ssl public_key inets \
                   eunit xmerl compiler runtime_tools mnesia syntax_tools
 
