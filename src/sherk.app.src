@@ -2,7 +2,7 @@
 {application, sherk,
  [
   {description, "Erlang profiler"},
-  {vsn, "1.1.2"},
+  {vsn, "1.1.3"},
   {registered, []},
   {applications, [
                   kernel,

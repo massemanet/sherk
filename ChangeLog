@@ -1,9 +1,96 @@
-commit 7e0f767a9be1b6fc8d4a9f9cb3585691ecdc2a58
+commit d0c4d27f1179d2317d1618ac2c4e865f237336b6
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Tue Dec 1 17:51:39 2015 +0100
+
+    v1.1.3
+
+src/sherk.app.src
+
+commit 96620a078ad530c6b92a5050e44bc532e5f17380
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Tue Dec 1 17:50:52 2015 +0100
+
+    bump gtknode dep to 1.0.3
+
+rebar.config
+
+commit cbb2078048a803cfce2fdaee982d7dcd4be62273
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Tue Dec 1 15:16:21 2015 +0100
+
+    fix readlink on mac
+
+priv/bin/gperf
+priv/bin/sherk
+src/gperfGtk.erl
+
+commit 4bc37910c9c81b335baaa506ec49b76998ec47d7
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Fri Nov 20 10:01:45 2015 +0100
+
+    use -nn for dialyzing
+
+Makefile
+
+commit 3da8c54abfa4549e83970a5f5584f8c4388dee02
+Author: mats cronqvist <masse@klarna.com>
+Date:   Thu Nov 12 13:08:21 2015 +0100
+
+    netload correct modules
+
+src/sherk_host.erl
+src/sherk_scan.erl
+
+commit d4cd7ce70a2c019c2f2424e8e4afdff8257bbe87
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Thu Nov 12 09:39:07 2015 +0100
+
+    implement helper to read from end of trz file
+
+src/sherk_scan.erl
+
+commit 68fefc339dfd4508b44fa9a2b78bd4d72091ffbe
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Thu Nov 12 09:38:32 2015 +0100
+
+    store start and stop wallclock times in trz file
+
+src/sherk_scan.erl
+src/sherk_target.erl
+
+commit 7e7d4338504999d392161e5e0e09af754b025b7f
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Thu Nov 12 09:36:56 2015 +0100
+
+    use milliseconds
+
+src/sherk_dump.erl
+src/sherk_scan.erl
+
+commit ce3129faca6a5b231d3f46acf9e96dcf4ba14460
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Wed Nov 11 19:46:57 2015 +0100
+
+    sherk_net - get node names through epmd/handshake
+
+src/sherk_net.erl
+
+commit 0257bbd128e0ddf4c5048d765a7868bb7276f5e2
+Author: mats cronqvist <masse@cronqvi.st>
+Date:   Tue Nov 10 09:59:55 2015 +0100
+
+    expand call tree
+
+src/sherk_gtk.erl
+src/sherk_prof.erl
+
+commit 8e6282edd6ee4ab17c0cf3269d743c6d9c6bb07b
 Author: mats cronqvist <masse@cronqvi.st>
 Date:   Sat Nov 7 11:27:18 2015 +0100
 
     v1.1.2
 
+ChangeLog
 src/sherk.app.src
 
 commit fbd02c62d3e9118bcf2e1aa41fa12819a8ecbdd6
