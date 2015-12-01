@@ -48,8 +48,8 @@ init() ->
 glade_file(Glade) ->
   try take_first(
         fun(F) -> true = filelib:is_regular(F) end,
-        [filename:join([code:lib_dir(eper),"src",Glade])
-         , filename:join([code:priv_dir(eper),"glade",Glade])])
+        [filename:join([code:lib_dir(sherk),src,Glade]),
+         filename:join([code:priv_dir(eper),"glade",Glade])])
   catch _:_ -> exit({not_found,Glade})
   end.
 

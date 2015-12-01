@@ -2,40 +2,24 @@
 
 usage(){
     cat <<- end
-usage: `basename $0` [-setcookie <cookie>] [-nocookie] [-nettick <tick>]
-       [-pa <path>] [-win] [-dbg] [-vsn <OTP version>] [-proxy proxy] [node]
+usage: $(basename $0) [-setcookie <cookie>] [-nocookie] [-nettick <tick>]
+                      [-win] [-dbg] [-vsn <OTP version>] [-proxy proxy] [node]
 end
     exit
 }
 
-if [ ${0:0:1} == "/" ];then
-    SPATH=$0
-elif [ -x $PWD/$0 ];then
-    SPATH=$PWD/$0
-else
-    SPATH=`which $0`
-fi
+function canonic() {
+    [ $(which greadlink) ] && greadlink -e $1 || readlink -e $1
+}
 
-if [ -L $SPATH ];then
-    SPATH=`readlink $SPATH`
-fi
-
-n=4
-while [ 0 -lt "$n" ]; do SPATH=`dirname $SPATH`; let n=n-1; done
-PATHS=""
-for p in $SPATH/gtknode-*/ebin $SPATH/eper-*/ebin; do
-    if [ "${p: -7}" == "-*/ebin" ]; then
-        echo "Can't expand $p.${p: -7}"
-    else
-        PATHS=$PATHS" -pa $p"
-    fi
-done
+SELF=$(canonic $(dirname $BASH_SOURCE))
+EBIN=$(canonic $SELF/../../ebin)
+DEPS=$(canonic $SELF/../../deps)
 
 detach="-detached"
 VSN=""
 START="-s gperf ni"
 HALT="-s erlang halt"
-XTRA=""
 
 while [ -n "$1" ]
   do
@@ -69,10 +53,6 @@ while [ -n "$1" ]
       "-nocookie")
           cookie=""
           ;;
-      "-pa")
-           shift
-           XTRA="-pa $1 $XTRA"
-           ;;
       "-proxy")
           shift
           proxy="$1"
@@ -81,7 +61,7 @@ while [ -n "$1" ]
           echo dollar_one $1
           ;;
       *)
-          XTRA="$XTRA $1"
+          NODE="$1"
           ;;
   esac
   shift
@@ -91,4 +71,4 @@ name="gperf_"$$
 FLAGS="$detach -boot start_sasl -sasl errlog_type error +A16"
 DISTR="-hidden -sname $name $cookie $nettick"
 
-$WIN erl $VSN $FLAGS $DISTR $PATHS $START $XTRA $proxy $HALT
+$WIN erl $VSN $FLAGS $DISTR -pa $EBIN -pa $DEPS/*/ebin $START $NODE $proxy $HALT

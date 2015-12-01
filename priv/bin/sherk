@@ -8,9 +8,13 @@ usage(){
     exit
 }
 
-SELF_DIR=$(readlink -e $(dirname $BASH_SOURCE))
-EBIN=$(readlink -e $SELF_DIR/../../ebin)
-DEPS=$(readlink -e $SELF_DIR/../../deps)
+function canonic() {
+    [ $(which greadlink) ] && greadlink -e $1 || readlink -e $1
+}
+
+SELF=$(canonic $(dirname $BASH_SOURCE))
+EBIN=$(canonic $SELF/../../ebin)
+DEPS=$(canonic $SELF/../../deps)
 
 detach="-detached"
 VSN=""
