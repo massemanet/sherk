@@ -15,11 +15,20 @@ RUN \
         && sudo apt-get install -y \
         erlang-common-test erlang-eunit erlang-dialyzer erlang-mode erlang-parsetools erlang-dev \
         && curl https://s3.amazonaws.com/rebar3/rebar3 > /tmp/rebar3 \
-        && sudo mv /tmp/rebar3 /usr/bin/rebar3 \
-        && sudo chmod +x /usr/bin/rebar3
+        && mv /tmp/rebar3 /usr/bin/rebar3 \
+        && chmod +x /usr/bin/rebar3
 
 RUN \
         git clone https://github.com/massemanet/sherk \
         && cd sherk \
         && git checkout 2020 \
         && rebar3 compile
+
+RUN \
+        groupadd -g 1000 sherk \
+        && useradd -s /bin/bash -u 1000 -g 1000 -m sherk \
+        && usermod -aG sudo sherk \
+        && echo "sherk:sherk" | chpasswd
+
+USER \
+        sherk
