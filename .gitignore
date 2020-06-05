@@ -1,8 +1,7 @@
 \#*
 .\#*
 *~
-/.eunit/
-/.rebar/
+/_build/
 /deps/
 /bin/*[^sh]
 /ebin/

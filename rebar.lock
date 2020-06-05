@@ -1,0 +1,4 @@
+[{<<"gtknode">>,
+  {git,"https://github.com/massemanet/gtknode.git",
+       {ref,"dcfc51c94b1253e3fe9a1f5dc554fc5a4e73da9c"}},
+  0}].

@@ -42,7 +42,7 @@ init() ->
   try loop(do_init(#ld{}))
   catch
     _:dying -> ok;
-    _:R -> ?log([{error,R},{stack,erlang:get_stacktrace()}])
+    _:R -> ?log([{error,R}])
   end.
 
 glade_file(Glade) ->
